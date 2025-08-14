@@ -8,9 +8,12 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -29,13 +32,90 @@ jobs:
       - name: Create Android project
         run: flutter create . --platforms=android
 
+      # ---- Ensure assets exist (creates placeholders if missing) ----
+      - name: Ensure assets exist
+        shell: bash
+        run: |
+          mkdir -p assets/audio assets/data
+          # keep audio folder if empty
+          [ -f assets/audio/.gitkeep ] || touch assets/audio/.gitkeep
+          # create a minimal questions.json if missing
+          if [ ! -f assets/data/questions.json ]; then
+            cat > assets/data/questions.json <<'JSON'
+{
+  "schema_version": 1,
+  "locales_supported": ["sv","en"],
+  "notes": "CI placeholder questions",
+  "questions": [
+    {
+      "id": "colosseum",
+      "titles": { "sv": "Colosseum", "en": "Colosseum" },
+      "country": { "sv": "Italien", "en": "Italy" },
+      "iso2": "IT",
+      "continent": "Europe",
+      "region": "Southern Europe",
+      "coords": { "lat": 41.8902, "lon": 12.4922 },
+      "century": 1,
+      "wikipedia": { "sv": "Colosseum", "en": "Colosseum" },
+      "image": { "source": "wikimedia", "file_or_page_hint": "Colosseum" },
+      "options": { "sv": ["Colosseum","Petra","Machu Picchu","Taj Mahal"], "en": ["Colosseum","Petra","Machu Picchu","Taj Mahal"] },
+      "answer_key": { "sv": "Colosseum", "en": "Colosseum" }
+    }
+  ]
+}
+JSON
+          fi
+
+      # ---- Validate questions.json early (fail fast with clear error) ----
+      - name: Validate questions JSON
+        run: |
+          python3 - << 'PY'
+          import json, os, sys
+          p = "assets/data/questions.json"
+          if not os.path.exists(p):
+            print("MISSING:", p); sys.exit(1)
+          try:
+            with open(p, "r", encoding="utf-8") as f:
+              json.load(f)
+            print("OK: JSON valid:", p)
+          except Exception as e:
+            print("ERROR parsing", p, "->", e); sys.exit(1)
+          PY
+
       - name: Get packages
         run: flutter pub get
+
+      # ---- Install Android NDK 27, required by audioplayers/path_provider ----
+      - name: Install Android NDK 27
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          yes | "${ANDROID_SDK_ROOT}"/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+          "${ANDROID_SDK_ROOT}"/cmdline-tools/latest/bin/sdkmanager --list | grep -E "ndk;27|ndk;26" || true
+
+      # ---- Force project to use NDK 27 (patch build.gradle[.kts]) ----
+      - name: Set ndkVersion in Android build files
+        shell: bash
+        run: |
+          FILE_KTS="android/app/build.gradle.kts"
+          FILE_GROOVY="android/app/build.gradle"
+          if [ -f "$FILE_KTS" ]; then
+            # Insert ndkVersion if not present
+            grep -q 'ndkVersion' "$FILE_KTS" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' "$FILE_KTS"
+            echo "Patched $FILE_KTS"
+          elif [ -f "$FILE_GROOVY" ]; then
+            grep -q 'ndkVersion' "$FILE_GROOVY" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' "$FILE_GROOVY"
+            echo "Patched $FILE_GROOVY"
+          else
+            echo "No Android build file found to patch (unexpected)."
+          fi
 
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
       - name: Build release APK
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK artifact
