@@ -1,23 +1,654 @@
 {
-  "schema_version": 1,
-  "locales_supported": ["sv","en"],
   "questions": [
     {
-      "id": "colosseum",
-      "titles": {"sv": "Colosseum", "en": "Colosseum"},
-      "country": {"sv": "Italien", "en": "Italy"},
-      "iso2": "IT",
-      "continent": "Europe",
-      "region": "Southern Europe",
-      "coords": {"lat": 41.8902, "lon": 12.4922},
-      "century": 1,
-      "wikipedia": {"sv": "Colosseum", "en": "Colosseum"},
-      "image": {"source": "wikimedia", "file_or_page_hint": "Colosseum"},
-      "options": {
-        "sv": ["Colosseum", "Petra", "Machu Picchu", "Taj Mahal"],
-        "en": ["Colosseum", "Petra", "Machu Picchu", "Taj Mahal"]
-      },
-      "answer_key": {"sv": "Colosseum", "en": "Colosseum"}
+      "question": "Vilket monument är detta snövita mausoleum i Agra?",
+      "choices": [
+        "Taj Mahal",
+        "Humayuns grav",
+        "Bibi Ka Maqbara",
+        "Itimad-ud-Daulahs grav"
+      ],
+      "answer": "Taj Mahal",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1600-talet"
+    },
+    {
+      "question": "Vilket antikt tempel ser du på bilden i Aten?",
+      "choices": [
+        "Parthenon",
+        "Pantheon",
+        "Erechtheion",
+        "Zeus tempel i Olympia"
+      ],
+      "answer": "Parthenon",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "400-talet f.Kr."
+    },
+    {
+      "question": "Vilken mur slingrar sig över norra Kina?",
+      "choices": [
+        "Kinesiska muren",
+        "Hadrianus mur",
+        "Berlinmuren",
+        "Sacsayhuamán"
+      ],
+      "answer": "Kinesiska muren",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "200-talet f.Kr."
+    },
+    {
+      "question": "Vilket amfiteaterbygge är detta i Rom?",
+      "choices": [
+        "Colosseum",
+        "Teatro Marcello",
+        "Arena di Verona",
+        "Pompejis teater"
+      ],
+      "answer": "Colosseum",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "70-talet e.Kr."
+    },
+    {
+      "question": "Vilken förcolumbiansk stad ligger högt i Anderna?",
+      "choices": [
+        "Machu Picchu",
+        "Teotihuacán",
+        "Tikal",
+        "Chichén Itzá"
+      ],
+      "answer": "Machu Picchu",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1400-talet"
+    },
+    {
+      "question": "Vilken stenring i England visas här?",
+      "choices": [
+        "Stonehenge",
+        "Avebury",
+        "Callanish",
+        "Ring of Brodgar"
+      ],
+      "answer": "Stonehenge",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "2000-talet f.Kr."
+    },
+    {
+      "question": "Vilken ikonisk moské med blå kupoler finns i Istanbul?",
+      "choices": [
+        "Blå moskén",
+        "Hagia Sofia",
+        "Suleymaniye",
+        "Selimiye"
+      ],
+      "answer": "Blå moskén",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1600-talet"
+    },
+    {
+      "question": "Vilket palatskomplex i Peking syns här?",
+      "choices": [
+        "Förbjudna staden",
+        "Sommarpalatset",
+        "Himmelens tempel",
+        "Potala-palatset"
+      ],
+      "answer": "Förbjudna staden",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1400-talet"
+    },
+    {
+      "question": "Vilket kloster ligger uthugget i klippan i Jordanien?",
+      "choices": [
+        "Al-Khazneh (Skattkammaren)",
+        "Monastéret (Ad Deir)",
+        "Mar Saba",
+        "St Katarina"
+      ],
+      "answer": "Al-Khazneh (Skattkammaren)",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "100-talet e.Kr."
+    },
+    {
+      "question": "Vilken vikig pyramidstad i Mexiko är detta?",
+      "choices": [
+        "Chichén Itzá",
+        "Palenque",
+        "Uxmal",
+        "Teotihuacán"
+      ],
+      "answer": "Chichén Itzá",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "800–1100-talet"
+    },
+    {
+      "question": "Vilket katedralbyggnadsverk är detta i Paris?",
+      "choices": [
+        "Notre-Dame",
+        "Sainte-Chapelle",
+        "Sacré-Cœur",
+        "Chartres"
+      ],
+      "answer": "Notre-Dame",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1100–1200-talet"
+    },
+    {
+      "question": "Vilket tempelkomplex i Kambodja syns här?",
+      "choices": [
+        "Angkor Wat",
+        "Bayon",
+        "Ta Prohm",
+        "Banteay Srei"
+      ],
+      "answer": "Angkor Wat",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1100-talet"
+    },
+    {
+      "question": "Vilket inka-fästningsverk nära Cusco är detta?",
+      "choices": [
+        "Sacsayhuamán",
+        "Ollantaytambo",
+        "Pisac",
+        "Choquequirao"
+      ],
+      "answer": "Sacsayhuamán",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1400-talet"
+    },
+    {
+      "question": "Vilket islamskt mausoleum i Uzbekistan är detta?",
+      "choices": [
+        "Gur-e Amir",
+        "Shah-i-Zinda",
+        "Bibi-Khanym",
+        "Kaljan-minareten"
+      ],
+      "answer": "Gur-e Amir",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1400-talet"
+    },
+    {
+      "question": "Vilken antik teater vid Egeiska havet syns här?",
+      "choices": [
+        "Efesos teater",
+        "Aspendos",
+        "Pergamon teater",
+        "Delphi teater"
+      ],
+      "answer": "Efesos teater",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "100-talet e.Kr."
+    },
+    {
+      "question": "Vilken klippfästning på Sri Lanka är detta?",
+      "choices": [
+        "Sigiriya",
+        "Anuradhapura",
+        "Polonnaruwa",
+        "Dambulla"
+      ],
+      "answer": "Sigiriya",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "400-talet e.Kr."
+    },
+    {
+      "question": "Vilket gotiskt katedralunder i Tyskland är detta?",
+      "choices": [
+        "Kölnerdomen",
+        "Ulm Münster",
+        "Speyer",
+        "Aachenkatedralen"
+      ],
+      "answer": "Kölnerdomen",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1200–1800-talet"
+    },
+    {
+      "question": "Vilket palats med spegelsal i Iran syns här?",
+      "choices": [
+        "Golestanpalatset",
+        "Chehel Sotoun",
+        "Ali Qapu",
+        "Niavaran"
+      ],
+      "answer": "Golestanpalatset",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1700–1800-talet"
+    },
+    {
+      "question": "Vilket klosterkomplex i Etiopien är uthugget ur berget?",
+      "choices": [
+        "Lalibelas klippkyrkor",
+        "Debre Damo",
+        "Axum",
+        "Harar Jugol"
+      ],
+      "answer": "Lalibelas klippkyrkor",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1100–1200-talet"
+    },
+    {
+      "question": "Vilken vikingatida runsten/motiv tillhör Uppsalaområdet?",
+      "choices": [
+        "Gamla Uppsala högar",
+        "Jellingstenarna",
+        "Rökstenen",
+        "Gullrumstenarna"
+      ],
+      "answer": "Gamla Uppsala högar",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "500–600-talet"
+    },
+    {
+      "question": "Vilken citadell i Afghanistan är detta?",
+      "choices": [
+        "Herats citadell",
+        "Bala Hissar (Kabul)",
+        "Qala Iktyaruddin",
+        "Bamiyandalarna"
+      ],
+      "answer": "Herats citadell",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1300-talet"
+    },
+    {
+      "question": "Vilken stad i Mali är känd för sin ler-bygga moské?",
+      "choices": [
+        "Djenné",
+        "Timbuktu",
+        "Gao",
+        "Bandiagara"
+      ],
+      "answer": "Djenné",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1200–1900-talet"
+    },
+    {
+      "question": "Vilken japansk borg är detta snövita slott?",
+      "choices": [
+        "Himeji",
+        "Matsumoto",
+        "Osaka",
+        "Nagoya"
+      ],
+      "answer": "Himeji",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1600-talet"
+    },
+    {
+      "question": "Vilken stor gravhög i Irland är detta?",
+      "choices": [
+        "Newgrange",
+        "Knowth",
+        "Dowth",
+        "Tara"
+      ],
+      "answer": "Newgrange",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "3000-talet f.Kr."
+    },
+    {
+      "question": "Vilken klosterruin på en ö utanför Normandies kust?",
+      "choices": [
+        "Mont-Saint-Michel",
+        "Lindisfarne",
+        "Skellig Michael",
+        "Iona Abbey"
+      ],
+      "answer": "Mont-Saint-Michel",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "700–1200-talet"
+    },
+    {
+      "question": "Vilket aboriginskt heligt berg är detta i Australien?",
+      "choices": [
+        "Uluru",
+        "Kata Tjuṯa",
+        "Kata Tjuta",
+        "Cradle Mountain"
+      ],
+      "answer": "Uluru",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "Forntid"
+    },
+    {
+      "question": "Vilket maya-stadscentrum i Guatemala visas här?",
+      "choices": [
+        "Tikal",
+        "El Mirador",
+        "Yaxhá",
+        "Quiriguá"
+      ],
+      "answer": "Tikal",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "200–900-talet"
+    },
+    {
+      "question": "Vilket zigguratliknande tempel i Irak är detta?",
+      "choices": [
+        "Ur ziggurat",
+        "Nippur",
+        "Borsippa",
+        "Khorsabad"
+      ],
+      "answer": "Ur ziggurat",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "2000-talet f.Kr."
+    },
+    {
+      "question": "Vilket historiskt centrum i Kuba syns här?",
+      "choices": [
+        "Havannas gamla stad",
+        "Trinidad",
+        "Santiago de Cuba",
+        "Camagüey"
+      ],
+      "answer": "Havannas gamla stad",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1500–1700-talet"
+    },
+    {
+      "question": "Vilken citadell i Marocko är detta lerbyggda komplex?",
+      "choices": [
+        "Aït Benhaddou",
+        "Fès el-Bali",
+        "Meknes",
+        "Essaouira"
+      ],
+      "answer": "Aït Benhaddou",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1600–1800-talet"
+    },
+    {
+      "question": "Vilken katedral i Spanien är känd för sin ofärdiga fasad?",
+      "choices": [
+        "Sagrada Família",
+        "Sevilla-katedralen",
+        "Santiago de Compostela",
+        "Burgos"
+      ],
+      "answer": "Sagrada Família",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1800–2000-talet"
+    },
+    {
+      "question": "Vilken ruinstad i Turkiet låg vid Medelhavet?",
+      "choices": [
+        "Pergamon",
+        "Patara",
+        "Ani",
+        "Göbekli Tepe"
+      ],
+      "answer": "Pergamon",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "200–100-talet f.Kr."
+    },
+    {
+      "question": "Vilken historisk stad i Jemen har fönster av alabaster?",
+      "choices": [
+        "Gamla stan i Sana'a",
+        "Shibam",
+        "Zabid",
+        "Tarim"
+      ],
+      "answer": "Gamla stan i Sana'a",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1000–1900-talet"
+    },
+    {
+      "question": "Vilket tempel i Japan är känt för sin gyllene paviljong?",
+      "choices": [
+        "Kinkaku-ji",
+        "Ginkaku-ji",
+        "Sensō-ji",
+        "Tōdai-ji"
+      ],
+      "answer": "Kinkaku-ji",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1300–1400-talet"
+    },
+    {
+      "question": "Vilken tempelstad i Myanmar är fylld av pagoder?",
+      "choices": [
+        "Bagan",
+        "Mandalay",
+        "Mrauk U",
+        "Naypyidaw"
+      ],
+      "answer": "Bagan",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1000–1200-talet"
+    },
+    {
+      "question": "Vilket astronomiskt observatorium i Indien byggdes av Jai Singh II?",
+      "choices": [
+        "Jantar Mantar (Jaipur)",
+        "Jantar Mantar (Delhi)",
+        "Gol Gumbaz",
+        "Hawa Mahal"
+      ],
+      "answer": "Jantar Mantar (Jaipur)",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1700-talet"
+    },
+    {
+      "question": "Vilken megalitisk plats på Malta är detta?",
+      "choices": [
+        "Ġgantija",
+        "Ħaġar Qim",
+        "Mnajdra",
+        "Tarxien"
+      ],
+      "answer": "Ġgantija",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "3000-talet f.Kr."
+    },
+    {
+      "question": "Vilket kungligt gravområde i Egypten är detta?",
+      "choices": [
+        "Konungarnas dal",
+        "Giza-platån",
+        "Saqqara",
+        "Abydos"
+      ],
+      "answer": "Konungarnas dal",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1500–1000-talet f.Kr."
+    },
+    {
+      "question": "Vilken röd fästning i Delhi är detta?",
+      "choices": [
+        "Röda fortet",
+        "Agrafortet",
+        "Golconda",
+        "Mehrangarh"
+      ],
+      "answer": "Röda fortet",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1600-talet"
+    },
+    {
+      "question": "Vilket kloster i Grekland ligger på höga klippor?",
+      "choices": [
+        "Meteora",
+        "Mount Athos",
+        "Hosios Loukas",
+        "Daphni"
+      ],
+      "answer": "Meteora",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1300–1500-talet"
+    },
+    {
+      "question": "Vilken palatsstad i Bhutan är detta?",
+      "choices": [
+        "Punakha Dzong",
+        "Paro Dzong",
+        "Thimphu Dzong",
+        "Trongsa Dzong"
+      ],
+      "answer": "Punakha Dzong",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1600-talet"
+    },
+    {
+      "question": "Vilken polynesisk ö är känd för sina moai-statyer?",
+      "choices": [
+        "Påskön (Rapa Nui)",
+        "Tahiti",
+        "Samoa",
+        "Tonga"
+      ],
+      "answer": "Påskön (Rapa Nui)",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1200–1500-talet"
+    },
+    {
+      "question": "Vilket palats i Sydkorea är Joseondynastins huvudpalats?",
+      "choices": [
+        "Gyeongbokgung",
+        "Changdeokgung",
+        "Deoksugung",
+        "Changgyeonggung"
+      ],
+      "answer": "Gyeongbokgung",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1300–1800-talet"
+    },
+    {
+      "question": "Vilket fort i Oman vaktar hamnen i Muskat?",
+      "choices": [
+        "Al Jalali Fort",
+        "Nizwa Fort",
+        "Bahla Fort",
+        "Nakhal Fort"
+      ],
+      "answer": "Al Jalali Fort",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1500-talet"
+    },
+    {
+      "question": "Vilken handelsstad i Uzbekistan ligger längs Sidenvägen?",
+      "choices": [
+        "Bukhara",
+        "Samarkand",
+        "Khiva",
+        "Shahrisabz"
+      ],
+      "answer": "Bukhara",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "800–1500-talet"
+    },
+    {
+      "question": "Vilken stenstad i Zimbabwe är detta?",
+      "choices": [
+        "Stora Zimbabwe",
+        "Khami",
+        "Mapungubwe",
+        "Great Enclosure"
+      ],
+      "answer": "Stora Zimbabwe",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1100–1400-talet"
+    },
+    {
+      "question": "Vilken barockkyrka i Ryssland har färgglada lökkupoler?",
+      "choices": [
+        "Vasilijkatedralen",
+        "Kazan-katedralen",
+        "Kyrkan på Spilled Blood",
+        "Smolny"
+      ],
+      "answer": "Vasilijkatedralen",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1500-talet"
+    },
+    {
+      "question": "Vilken inhemsk klippbostad i USA är detta?",
+      "choices": [
+        "Mesa Verde",
+        "Montezuma Castle",
+        "Canyon de Chelly",
+        "Bandelier"
+      ],
+      "answer": "Mesa Verde",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1100–1300-talet"
+    },
+    {
+      "question": "Vilken normandisk katedral i Storbritannien är detta?",
+      "choices": [
+        "Durham Cathedral",
+        "Canterbury Cathedral",
+        "York Minster",
+        "Ely Cathedral"
+      ],
+      "answer": "Durham Cathedral",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1000–1100-talet"
+    },
+    {
+      "question": "Vilken palatsruin i Skottland med rosafärgad sten är detta?",
+      "choices": [
+        "Linlithgow Palace",
+        "Stirling Castle",
+        "Eilean Donan",
+        "Dunnottar"
+      ],
+      "answer": "Linlithgow Palace",
+      "imageUrl": "TBD",
+      "attribution": "TBD",
+      "century": "1400–1500-talet"
     }
   ]
 }
