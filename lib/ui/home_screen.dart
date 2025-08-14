@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/background_music.dart';
 import 'game_screen.dart';
 
+/// Enkel språkväxel
 enum AppLocale { sv, en }
 
 class HomeScreen extends StatefulWidget {
@@ -26,7 +27,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final title = t('Guess the Heritage', 'Guess the Heritage');
-    final subtitle = t('Kulturarvsquiz med bilder & ljud',
+    final subtitle = t('Kulturarvsquiz med bilder & musik',
                        'Cultural Heritage Quiz with images & music');
 
     return Scaffold(
@@ -38,10 +39,9 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Översta raden: språk + musik
+                  // Topp: språk + musik
                   Row(
                     children: [
-                      // Språkval
                       DropdownButton<AppLocale>(
                         value: _locale,
                         onChanged: (v) => setState(() => _locale = v ?? AppLocale.sv),
@@ -51,7 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
                         ],
                       ),
                       const Spacer(),
-                      // Musik av/på
                       Row(
                         children: [
                           Icon(_musicOn ? Icons.music_note : Icons.music_off),
@@ -67,7 +66,17 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const Spacer(),
-                  // Titel och underrad
+                  // 🔹 Pyramid-ikon från assets/icons/
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(
+                      'assets/icons/pyramid.png',
+                      width: 120,
+                      height: 120,
+                      fit: BoxFit.contain,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -82,7 +91,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 24),
-                  // Startknapp
                   ElevatedButton.icon(
                     icon: const Icon(Icons.play_arrow),
                     label: Text(t('Starta spel', 'Start Game')),
@@ -98,7 +106,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  // Sekundära knappar (kan kopplas senare)
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -128,33 +135,5 @@ class _HomeScreenState extends State<HomeScreen> {
 
 class _LeafBackground extends StatelessWidget {
   const _LeafBackground();
-
   @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFE6F4EA), Color(0xFFCDEFD8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: List.generate(14, (i) {
-          final double top = (i * 70) % (MediaQuery.of(context).size.height);
-          final double left = (i * 40) % (MediaQuery.of(context).size.width);
-          final double size = 40 + (i % 5) * 12;
-          return Positioned(
-            top: top,
-            left: left,
-            child: Icon(
-              Icons.eco,
-              size: size,
-              color: Colors.green.withOpacity(0.08 + (i % 4) * 0.03),
-            ),
-          );
-        }),
-      ),
-    );
-  }
-}
+  Widge
