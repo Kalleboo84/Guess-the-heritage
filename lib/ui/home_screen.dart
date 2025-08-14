@@ -28,7 +28,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final title = t('Guess the Heritage', 'Guess the Heritage');
     final subtitle = t('Kulturarvsquiz med bilder & musik',
-                       'Cultural Heritage Quiz with images & music');
+        'Cultural Heritage Quiz with images & music');
 
     return Scaffold(
       body: Stack(
@@ -134,7 +134,7 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _LeafBackground extends StatelessWidget {
-  const _LeafBackground({super.key});
+  const _LeafBackground();
 
   @override
   Widget build(BuildContext context) {
