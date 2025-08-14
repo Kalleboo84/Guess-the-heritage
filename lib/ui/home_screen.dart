@@ -134,6 +134,35 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _LeafBackground extends StatelessWidget {
-  const _LeafBackground();
+  const _LeafBackground({super.key});
+
   @override
-  Widge
+  Widget build(BuildContext context) {
+    final size = MediaQuery.of(context).size;
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFE6F4EA), Color(0xFFCDEFD8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: List.generate(14, (i) {
+          final double top = (i * 70) % size.height;
+          final double left = (i * 40) % size.width;
+          final double iconSize = 40 + (i % 5) * 12;
+          return Positioned(
+            top: top,
+            left: left,
+            child: Icon(
+              Icons.eco,
+              size: iconSize,
+              color: Colors.green.withOpacity(0.08 + (i % 4) * 0.03),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+}
