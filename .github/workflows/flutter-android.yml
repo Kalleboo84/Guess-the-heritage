@@ -32,52 +32,13 @@ jobs:
       - name: Create Android project
         run: flutter create . --platforms=android
 
-      # ---- Ensure assets exist (creates placeholders if missing) ----
-      - name: Ensure assets exist
-        shell: bash
+      # (valfritt) Lista filer för att felsöka om något saknas
+      - name: Debug: list files
         run: |
-          mkdir -p assets/audio assets/data
-          [ -f assets/audio/.gitkeep ] || touch assets/audio/.gitkeep
-          if [ ! -f assets/data/questions.json ]; then
-            cat > assets/data/questions.json <<'JSON'
-{
-  "schema_version": 1,
-  "locales_supported": ["sv","en"],
-  "notes": "CI placeholder questions",
-  "questions": [
-    {
-      "id": "colosseum",
-      "titles": { "sv": "Colosseum", "en": "Colosseum" },
-      "country": { "sv": "Italien", "en": "Italy" },
-      "iso2": "IT",
-      "continent": "Europe",
-      "region": "Southern Europe",
-      "coords": { "lat": 41.8902, "lon": 12.4922 },
-      "century": 1,
-      "wikipedia": { "sv": "Colosseum", "en": "Colosseum" },
-      "image": { "source": "wikimedia", "file_or_page_hint": "Colosseum" },
-      "options": { "sv": ["Colosseum","Petra","Machu Picchu","Taj Mahal"], "en": ["Colosseum","Petra","Machu Picchu","Taj Mahal"] },
-      "answer_key": { "sv": "Colosseum", "en": "Colosseum" }
-    }
-  ]
-}
-JSON
-          fi
-
-      - name: Validate questions JSON
-        run: |
-          python3 - << 'PY'
-          import json, os, sys
-          p = "assets/data/questions.json"
-          if not os.path.exists(p):
-            print("MISSING:", p); sys.exit(1)
-          try:
-            with open(p, "r", encoding="utf-8") as f:
-              json.load(f)
-            print("OK: JSON valid:", p)
-          except Exception as e:
-            print("ERROR parsing", p, "->", e); sys.exit(1)
-          PY
+          ls -la
+          ls -la lib || true
+          ls -la assets || true
+          ls -la assets/data || true
 
       - name: Get packages
         run: flutter pub get
@@ -95,24 +56,4 @@ JSON
           FILE_GROOVY="android/app/build.gradle"
           if [ -f "$FILE_KTS" ]; then
             grep -q 'ndkVersion' "$FILE_KTS" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' "$FILE_KTS"
-            echo "Patched $FILE_KTS"
-          elif [ -f "$FILE_GROOVY" ]; then
-            grep -q 'ndkVersion' "$FILE_GROOVY" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' "$FILE_GROOVY"
-            echo "Patched $FILE_GROOVY"
-          else
-            echo "No Android build file found to patch (unexpected)."
-          fi
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
-
-      - name: Build release APK
-        env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
-        run: flutter build apk --release --no-tree-shake-icons
-
-      - name: Upload APK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release-apk
-          path: build/app/outputs/flutter-apk/app-release.apk
+          elif [ -f "$FILE_GROOVY"_]()
