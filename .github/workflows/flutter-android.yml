@@ -1,119 +1,49 @@
-name: Flutter Android APK
+name: Flutter Android (stable)
+
 on:
-  workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [ main ]
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out repo
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
-      - name: Set up Java
+      - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Flutter
+      - name: Set up Flutter (3.22.2 stable)
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.22.2'
+          cache: true
 
-      - name: Show Flutter version
-        run: flutter --version
-
-      # Skapa Android-projekt (om mappar saknas)
-      - name: Create Android project (android folder only)
-        run: flutter create . --platforms=android
-
-      # Säkerställ att din lib/ inte överskrivs av "counter demo"
-      - name: Restore our lib after create
+      # (Valfritt) Installera NDK 27 om du behöver native/ffmpeg o.dyl.
+      - name: Install Android NDK 27
         run: |
-            git checkout -- lib || true
-            test -f lib/main.dart && head -n 30 lib/main.dart && echo "✅ lib/main.dart present"
+          echo "y" | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.0.12077973" || true
 
-      # Sätt unikt paketnamn
-      - name: Set unique applicationId
-        run: |
-          if [ -f android/app/build.gradle.kts ]; then
-            sed -i 's/applicationId\s*=\s*".*"/applicationId = "com.kalleboo.guessheritage"/' android/app/build.gradle.kts || true
-            grep -q 'applicationId' android/app/build.gradle.kts || \
-              sed -i '0,/defaultConfig\s*{/{s//defaultConfig {\n        applicationId = "com.kalleboo.guessheritage"/}' android/app/build.gradle.kts
-          elif [ -f android/app/build.gradle ]; then
-            sed -i 's/applicationId\s*".*"/applicationId "com.kalleboo.guessheritage"/' android/app/build.gradle || true
-            grep -q 'applicationId' android/app/build.gradle || \
-              sed -i '0,/defaultConfig\s*{/{s//defaultConfig {\n        applicationId "com.kalleboo.guessheritage"/}' android/app/build.gradle
-          fi
+      - name: Flutter doctor
+        run: flutter doctor -v
 
-      # Snabb felsökning: visa struktur och pubspec
-      - name: List root
-        run: ls -la
-      - name: List lib
-        run: ls -la lib || true
-      - name: List assets
-        run: ls -la assets || true
-      - name: List assets/data
-        run: ls -la assets/data || true
-      - name: Show pubspec
-        run: sed -n '1,200p' pubspec.yaml
-
-      # 🔒 Sanity checks: stoppa build om vår UI-text saknas
-      - name: Sanity check our UI strings
-        run: |
-          set -e
-          grep -R "Starta spel" -n lib/main.dart
-          grep -R "Inställningar" -n lib/main.dart
-          echo "✅ UI-texter hittades i lib/main.dart"
-
-      - name: Flutter pub get
+      - name: Pub get
         run: flutter pub get
 
-      # Installera NDK 27 (krävs av plugins)
-      - name: Install Android NDK 27
-        env:
-          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+      - name: Analyze
+        run: flutter analyze
 
-      # Tvinga NDK-version i gradle
-      - name: Force ndkVersion via gradle.properties
-        run: |
-          mkdir -p android
-          touch android/gradle.properties
-          grep -q '^android.ndkVersion=' android/gradle.properties || echo "android.ndkVersion=27.0.12077973" >> android/gradle.properties
-          sed -i 's/^android\.ndkVersion=.*/android.ndkVersion=27.0.12077973/' android/gradle.properties
+      - name: Build APK
+        run: flutter build apk --release --target=lib/main.dart
 
-      # Patcha ndkVersion i Gradle-filer om saknas
-      - name: Patch ndkVersion in Gradle files
-        run: |
-          if [ -f android/app/build.gradle.kts ]; then
-            grep -q 'ndkVersion' android/app/build.gradle.kts || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' android/app/build.gradle.kts
-          fi
-          if [ -f android/app/build.gradle ]; then
-            grep -q 'ndkVersion' android/app/build.gradle || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' android/app/build.gradle
-          fi
-
-      - name: Accept Android licenses
-        run: yes | flutter doctor --android-licenses || true
-
-      # 🧹 Rensa cache så inte någon gammal build av "counter demo" ligger kvar
-      - name: Flutter clean
-        run: flutter clean
-
-      # 🚀 Bygg APK och PEKA uttryckligen på vår entrypoint
-      - name: Build release APK (force entrypoint)
-        env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
-        run: flutter build apk --release --no-tree-shake-icons -t lib/main.dart
-
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: app-release-apk
+          name: app-release
           path: build/app/outputs/flutter-apk/app-release.apk
