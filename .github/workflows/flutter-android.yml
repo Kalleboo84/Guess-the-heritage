@@ -1,4 +1,4 @@
-name: Flutter Android (stable)
+name: Flutter Android (recreate android folder)
 
 on:
   push:
@@ -19,22 +19,27 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Flutter (3.22.2 stable)
+      - name: Set up Flutter (stable 3.22.2)
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.22.2'
           cache: true
-
-      # (Valfritt) Installera NDK 27 om du behöver native/ffmpeg o.dyl.
-      - name: Install Android NDK 27
-        run: |
-          echo "y" | sudo ${ANDROID_HOME}/cmdline-tools/latest/bin/sdkmanager --install "ndk;27.0.12077973" || true
 
       - name: Flutter doctor
         run: flutter doctor -v
 
       - name: Pub get
         run: flutter pub get
+
+      # 🔧 Viktigt: ta bort gammal android/ och skapa en ny modern
+      - name: Recreate android/ with modern Gradle template
+        run: |
+          rm -rf android
+          flutter create . --platforms=android --org com.kalleboo --project-name guessheritage
+          # Lägg till internet-tillstånd om det saknas (för att ladda bilder via nätet)
+          if ! grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml; then
+            sed -i '1i <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
+          fi
 
       - name: Analyze
         run: flutter analyze
