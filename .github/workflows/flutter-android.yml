@@ -29,37 +29,66 @@ jobs:
       - name: Show Flutter version
         run: flutter --version
 
-      # Skapar bara Android-mappen — kan råka lägga in demo-filer i lib/
+      # Skapa Android-projektfiler (om de saknas), men skriv inte över din appkod
       - name: Create Android project (android folder only)
         run: flutter create . --platforms=android
 
-      # Återställ vår egen lib/ efter flutter create så demot inte ersätter koden
+      # Återställ vår lib/ (skydd mot att flutter create lagt in "counter demo")
       - name: Restore our lib after create
         run: |
           git checkout -- lib || true
           test -f lib/main.dart && head -n 1 lib/main.dart && echo "✅ lib/main.dart present"
 
-      # (Valfritt) Lista filer för snabb felsökning
-      - name: List important paths
+      # Sätt ett unikt paketnamn för appen (både Groovy och Kotlin DSL stöds)
+      - name: Set unique applicationId
         run: |
-          echo "---- lib ----"; ls -la lib || true
-          echo "---- assets ----"; ls -la assets || true
-          echo "---- assets/data ----"; ls -la assets/data || true
-          echo "---- pubspec.yaml ----"; sed -n '1,200p' pubspec.yaml
+          if [ -f android/app/build.gradle.kts ]; then
+            sed -i 's/applicationId\s*=\s*".*"/applicationId = "com.kalleboo.guessheritage"/' android/app/build.gradle.kts || true
+            grep -q 'applicationId' android/app/build.gradle.kts || \
+              sed -i '0,/defaultConfig\s*{/{s//defaultConfig {\n        applicationId = "com.kalleboo.guessheritage"/}' android/app/build.gradle.kts
+          elif [ -f android/app/build.gradle ]; then
+            sed -i 's/applicationId\s*".*"/applicationId "com.kalleboo.guessheritage"/' android/app/build.gradle || true
+            grep -q 'applicationId' android/app/build.gradle || \
+              sed -i '0,/defaultConfig\s*{/{s//defaultConfig {\n        applicationId "com.kalleboo.guessheritage"/}' android/app/build.gradle
+          fi
+
+      # (Valfritt men hjälpsamt) visa struktur och pubspec för snabb felsökning
+      - name: List root
+        run: ls -la
+      - name: List lib
+        run: ls -la lib || true
+      - name: List assets
+        run: ls -la assets || true
+      - name: List assets/data
+        run: ls -la assets/data || true
+      - name: Show pubspec
+        run: sed -n '1,200p' pubspec.yaml
+
+      # Snabb sanity-check: säkerställ att vår UI-text finns i källan
+      - name: Sanity check our UI strings
+        run: |
+          grep -R "Starta spel" -n lib || echo "⚠️ Hittade inte 'Starta spel' i lib/ – dubbelkolla att rätt main.dart är committad."
 
       - name: Flutter pub get
         run: flutter pub get
 
-      # Installera NDK 27 (krävs av audioplayers/path_provider)
+      # Installera Android NDK 27 (krävs av vissa plugins)
       - name: Install Android NDK 27
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
 
-      # Tvinga NDK-version i projektet (både gradle.properties och ev. build.gradle)
-      - name: Force NDK version
+      # Tvinga NDK-version via gradle.properties
+      - name: Force ndkVersion via gradle.properties
         run: |
-          echo "android.ndkVersion=27.0.12077973" >> android/gradle.properties || true
+          mkdir -p android
+          touch android/gradle.properties
+          grep -q '^android.ndkVersion=' android/gradle.properties || echo "android.ndkVersion=27.0.12077973" >> android/gradle.properties
+          sed -i 's/^android\.ndkVersion=.*/android.ndkVersion=27.0.12077973/' android/gradle.properties
+
+      # Patcha ndkVersion i Gradle-filer om den saknas
+      - name: Patch ndkVersion in Gradle files
+        run: |
           if [ -f android/app/build.gradle.kts ]; then
             grep -q 'ndkVersion' android/app/build.gradle.kts || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' android/app/build.gradle.kts
           fi
