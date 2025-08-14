@@ -29,17 +29,17 @@ jobs:
       - name: Show Flutter version
         run: flutter --version
 
-      # Skapa Android-projektfiler (om de saknas), men skriv inte över din appkod
+      # Skapa Android-projekt (om mappar saknas)
       - name: Create Android project (android folder only)
         run: flutter create . --platforms=android
 
-      # Återställ vår lib/ (skydd mot att flutter create lagt in "counter demo")
+      # Säkerställ att din lib/ inte överskrivs av "counter demo"
       - name: Restore our lib after create
         run: |
-          git checkout -- lib || true
-          test -f lib/main.dart && head -n 1 lib/main.dart && echo "✅ lib/main.dart present"
+            git checkout -- lib || true
+            test -f lib/main.dart && head -n 30 lib/main.dart && echo "✅ lib/main.dart present"
 
-      # Sätt ett unikt paketnamn för appen (både Groovy och Kotlin DSL stöds)
+      # Sätt unikt paketnamn
       - name: Set unique applicationId
         run: |
           if [ -f android/app/build.gradle.kts ]; then
@@ -52,7 +52,7 @@ jobs:
               sed -i '0,/defaultConfig\s*{/{s//defaultConfig {\n        applicationId "com.kalleboo.guessheritage"/}' android/app/build.gradle
           fi
 
-      # (Valfritt men hjälpsamt) visa struktur och pubspec för snabb felsökning
+      # Snabb felsökning: visa struktur och pubspec
       - name: List root
         run: ls -la
       - name: List lib
@@ -64,21 +64,24 @@ jobs:
       - name: Show pubspec
         run: sed -n '1,200p' pubspec.yaml
 
-      # Snabb sanity-check: säkerställ att vår UI-text finns i källan
+      # 🔒 Sanity checks: stoppa build om vår UI-text saknas
       - name: Sanity check our UI strings
         run: |
-          grep -R "Starta spel" -n lib || echo "⚠️ Hittade inte 'Starta spel' i lib/ – dubbelkolla att rätt main.dart är committad."
+          set -e
+          grep -R "Starta spel" -n lib/main.dart
+          grep -R "Inställningar" -n lib/main.dart
+          echo "✅ UI-texter hittades i lib/main.dart"
 
       - name: Flutter pub get
         run: flutter pub get
 
-      # Installera Android NDK 27 (krävs av vissa plugins)
+      # Installera NDK 27 (krävs av plugins)
       - name: Install Android NDK 27
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
 
-      # Tvinga NDK-version via gradle.properties
+      # Tvinga NDK-version i gradle
       - name: Force ndkVersion via gradle.properties
         run: |
           mkdir -p android
@@ -86,7 +89,7 @@ jobs:
           grep -q '^android.ndkVersion=' android/gradle.properties || echo "android.ndkVersion=27.0.12077973" >> android/gradle.properties
           sed -i 's/^android\.ndkVersion=.*/android.ndkVersion=27.0.12077973/' android/gradle.properties
 
-      # Patcha ndkVersion i Gradle-filer om den saknas
+      # Patcha ndkVersion i Gradle-filer om saknas
       - name: Patch ndkVersion in Gradle files
         run: |
           if [ -f android/app/build.gradle.kts ]; then
@@ -99,10 +102,15 @@ jobs:
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
-      - name: Build release APK
+      # 🧹 Rensa cache så inte någon gammal build av "counter demo" ligger kvar
+      - name: Flutter clean
+        run: flutter clean
+
+      # 🚀 Bygg APK och PEKA uttryckligen på vår entrypoint
+      - name: Build release APK (force entrypoint)
         env:
           GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
-        run: flutter build apk --release --no-tree-shake-icons
+        run: flutter build apk --release --no-tree-shake-icons -t lib/main.dart
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
