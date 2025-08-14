@@ -31,15 +31,47 @@ jobs:
       - name: Pub get
         run: flutter pub get
 
-      # 🔧 Viktigt: ta bort gammal android/ och skapa en ny modern
-      - name: Recreate android/ with modern Gradle template
+      # ✅ Skapa om android/ och skriv en korrekt AndroidManifest.xml
+      - name: Recreate android/ and write valid AndroidManifest.xml
         run: |
           rm -rf android
           flutter create . --platforms=android --org com.kalleboo --project-name guessheritage
-          # Lägg till internet-tillstånd om det saknas (för att ladda bilder via nätet)
-          if ! grep -q 'android.permission.INTERNET' android/app/src/main/AndroidManifest.xml; then
-            sed -i '1i <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
-          fi
+
+          cat > android/app/src/main/AndroidManifest.xml <<'XML'
+          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+              <!-- Internet behövs för att ladda bilder/HTTP -->
+              <uses-permission android:name="android.permission.INTERNET"/>
+              <application
+                  android:label="guessheritage"
+                  android:name="${applicationName}"
+                  android:icon="@mipmap/ic_launcher">
+                  <activity
+                      android:name=".MainActivity"
+                      android:exported="true"
+                      android:launchMode="singleTop"
+                      android:theme="@style/LaunchTheme"
+                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
+                      android:hardwareAccelerated="true"
+                      android:windowSoftInputMode="adjustResize">
+                      <intent-filter>
+                          <action android:name="android.intent.action.MAIN"/>
+                          <category android:name="android.intent.category.LAUNCHER"/>
+                      </intent-filter>
+                  </activity>
+                  <!-- NormalTheme används efter att LaunchTheme tas bort -->
+                  <meta-data
+                      android:name="io.flutter.embedding.android.NormalTheme"
+                      android:resource="@style/NormalTheme"/>
+                  <meta-data
+                      android:name="flutterEmbedding"
+                      android:value="2"/>
+              </application>
+          </manifest>
+          XML
+
+          echo "----- AndroidManifest.xml -----"
+          cat android/app/src/main/AndroidManifest.xml
+          echo "--------------------------------"
 
       - name: Analyze
         run: flutter analyze
