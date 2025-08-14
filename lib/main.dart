@@ -16,9 +16,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Guess the Heritage',
       theme: ThemeData(
-        // Fungerar även på äldre Flutter-versioner
-        colorSchemeSeed: const Color(0xFF6DC17E),
-        // Ta gärna bort raden nedan om din Flutter är mycket gammal
+        colorSchemeSeed: const Color(0xFF6DC17E), // mjuk grön ton
         useMaterial3: true,
       ),
       home: const HomeScreen(),
