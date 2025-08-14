@@ -8,15 +8,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Set up Java (Android/Gradle)
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: 'stable'
-      - run: flutter --version
-      - run: flutter pub get
-      - run: flutter build apk --release
-      - name: Upload APK
+
+      - name: Flutter version
+        run: flutter --version
+
+      # 🔧 Skapa Android/iOS-projektmappar i CI utifrån pubspec.yaml
+      - name: Flutter create platforms
+        run: flutter create . --platforms=android
+
+      - name: Get packages
+        run: flutter pub get
+
+      # (Valfritt) acceptera Android-licenser för säkerhets skull
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
+
+      - name: Build release APK
+        run: flutter build apk --release
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
