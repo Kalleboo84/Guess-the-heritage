@@ -32,13 +32,18 @@ jobs:
       - name: Create Android project
         run: flutter create . --platforms=android
 
-      # (valfritt) Lista filer för att felsöka om något saknas
       - name: Debug: list files
         run: |
+          echo "---- tree ----"
           ls -la
+          echo "---- lib ----"
           ls -la lib || true
+          echo "---- assets ----"
           ls -la assets || true
+          echo "---- assets/data ----"
           ls -la assets/data || true
+          echo "---- pubspec.yaml ----"
+          sed -n '1,200p' pubspec.yaml
 
       - name: Get packages
         run: flutter pub get
@@ -56,4 +61,20 @@ jobs:
           FILE_GROOVY="android/app/build.gradle"
           if [ -f "$FILE_KTS" ]; then
             grep -q 'ndkVersion' "$FILE_KTS" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' "$FILE_KTS"
-          elif [ -f "$FILE_GROOVY"_]()
+          elif [ -f "$FILE_GROOVY" ]; then
+            grep -q 'ndkVersion' "$FILE_GROOVY" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' "$FILE_GROOVY"
+          fi
+
+      - name: Accept Android licenses
+        run: yes | flutter doctor --android-licenses || true
+
+      - name: Build release APK
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
+        run: flutter build apk --release --no-tree-shake-icons
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
