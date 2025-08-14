@@ -16,7 +16,9 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Guess the Heritage',
       theme: ThemeData(
-        colorSchemeSeed: const Color(0xFF6DC17E), // mjuk grön ton
+        // Fungerar även på äldre Flutter-versioner
+        colorSchemeSeed: const Color(0xFF6DC17E),
+        // Ta gärna bort raden nedan om din Flutter är mycket gammal
         useMaterial3: true,
       ),
       home: const HomeScreen(),
@@ -36,7 +38,7 @@ class HomeScreen extends StatelessWidget {
           children: [
             const Text('Musik igång 🎵'),
             const SizedBox(height: 12),
-            FilledButton(
+            ElevatedButton(
               onPressed: () {
                 // TODO: navigera till din riktiga startsida/spelvy
               },
