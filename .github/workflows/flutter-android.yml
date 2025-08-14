@@ -8,6 +8,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -25,43 +26,43 @@ jobs:
         with:
           channel: stable
 
-      - name: Flutter version
+      - name: Show Flutter version
         run: flutter --version
 
       - name: Create Android project
         run: flutter create . --platforms=android
 
+      # --- Snabb felsökning: lista filer & visa pubspec.yaml ---
       - name: List root
         run: ls -la
-
       - name: List lib
         run: ls -la lib || true
-
       - name: List assets
         run: ls -la assets || true
-
       - name: List assets/data
         run: ls -la assets/data || true
-
       - name: Show pubspec
         run: sed -n '1,200p' pubspec.yaml
 
       - name: Flutter pub get
         run: flutter pub get
 
+      # --- Installera NDK 27 (krävs av audioplayers/path_provider) ---
       - name: Install Android NDK 27
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
 
-      - name: Patch ndkVersion (Kotlin DSL)
+      # --- Tvinga NDK-version via gradle.properties ---
+      - name: Force ndkVersion via gradle.properties
+        run: echo "android.ndkVersion=27.0.12077973" >> android/gradle.properties
+
+      # --- Patcha ndkVersion i build.gradle(.kts) om saknas ---
+      - name: Patch ndkVersion in Gradle files
         run: |
           if [ -f android/app/build.gradle.kts ]; then
             grep -q 'ndkVersion' android/app/build.gradle.kts || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' android/app/build.gradle.kts
           fi
-
-      - name: Patch ndkVersion (Groovy)
-        run: |
           if [ -f android/app/build.gradle ]; then
             grep -q 'ndkVersion' android/app/build.gradle || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' android/app/build.gradle
           fi
@@ -70,6 +71,8 @@ jobs:
         run: yes | flutter doctor --android-licenses || true
 
       - name: Build release APK
+        env:
+          GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK
