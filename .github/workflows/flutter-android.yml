@@ -8,55 +8,26 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: 'stable'
+          channel: stable
 
-      - name: Flutter version
+      - name: Show Flutter version
         run: flutter --version
 
       - name: Create Android project
         run: flutter create . --platforms=android
-
-      # 🔎 Skriv ut struktur + pubspec så vi ser exakt vad som saknas/är fel
-      - name: Debug: list files
-        run: |
-          pwd
-          ls -la
-          echo "----- lib -----"; ls -la lib || true
-          echo "----- assets -----"; ls -la assets || true
-          echo "----- assets/data -----"; ls -la assets/data || true
-          echo "----- pubspec.yaml -----"; sed -n '1,200p' pubspec.yaml
-
-      # ✅ Avbryt tidigt om questions.json saknas/är ogiltig
-      - name: Validate questions JSON
-        run: |
-          python3 - << 'PY'
-          import json, os, sys
-          p = "assets/data/questions.json"
-          if not os.path.exists(p):
-            print("MISSING:", p); sys.exit(1)
-          try:
-            with open(p, "r", encoding="utf-8") as f:
-              json.load(f)
-            print("OK: JSON valid:", p)
-          except Exception as e:
-            print("ERROR parsing", p, "->", e); sys.exit(1)
-          PY
 
       - name: Get packages
         run: flutter pub get
@@ -65,8 +36,6 @@ jobs:
         run: yes | flutter doctor --android-licenses || true
 
       - name: Build release APK
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'"
         run: flutter build apk --release --no-tree-shake-icons
 
       - name: Upload APK artifact
