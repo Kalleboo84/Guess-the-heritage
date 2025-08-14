@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "locales_supported": ["sv","en"],
+  "questions": [
+    {
+      "id": "colosseum",
+      "titles": {"sv": "Colosseum", "en": "Colosseum"},
+      "country": {"sv": "Italien", "en": "Italy"},
+      "iso2": "IT",
+      "continent": "Europe",
+      "region": "Southern Europe",
+      "coords": {"lat": 41.8902, "lon": 12.4922},
+      "century": 1,
+      "wikipedia": {"sv": "Colosseum", "en": "Colosseum"},
+      "image": {"source": "wikimedia", "file_or_page_hint": "Colosseum"},
+      "options": {
+        "sv": ["Colosseum", "Petra", "Machu Picchu", "Taj Mahal"],
+        "en": ["Colosseum", "Petra", "Machu Picchu", "Taj Mahal"]
+      },
+      "answer_key": {"sv": "Colosseum", "en": "Colosseum"}
+    }
+  ]
+}
