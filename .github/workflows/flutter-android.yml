@@ -37,9 +37,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p assets/audio assets/data
-          # keep audio folder if empty
           [ -f assets/audio/.gitkeep ] || touch assets/audio/.gitkeep
-          # create a minimal questions.json if missing
           if [ ! -f assets/data/questions.json ]; then
             cat > assets/data/questions.json <<'JSON'
 {
@@ -66,7 +64,6 @@ jobs:
 JSON
           fi
 
-      # ---- Validate questions.json early (fail fast with clear error) ----
       - name: Validate questions JSON
         run: |
           python3 - << 'PY'
@@ -85,22 +82,18 @@ JSON
       - name: Get packages
         run: flutter pub get
 
-      # ---- Install Android NDK 27, required by audioplayers/path_provider ----
       - name: Install Android NDK 27
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
         run: |
           yes | "${ANDROID_SDK_ROOT}"/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
-          "${ANDROID_SDK_ROOT}"/cmdline-tools/latest/bin/sdkmanager --list | grep -E "ndk;27|ndk;26" || true
 
-      # ---- Force project to use NDK 27 (patch build.gradle[.kts]) ----
       - name: Set ndkVersion in Android build files
         shell: bash
         run: |
           FILE_KTS="android/app/build.gradle.kts"
           FILE_GROOVY="android/app/build.gradle"
           if [ -f "$FILE_KTS" ]; then
-            # Insert ndkVersion if not present
             grep -q 'ndkVersion' "$FILE_KTS" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' "$FILE_KTS"
             echo "Patched $FILE_KTS"
           elif [ -f "$FILE_GROOVY" ]; then
