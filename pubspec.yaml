@@ -23,3 +23,4 @@ flutter:
   assets:
     - assets/audio/
     - assets/data/questions.json
+    - assets/icons/
