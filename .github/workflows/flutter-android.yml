@@ -1,14 +1,13 @@
 name: Flutter Android APK
-
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out repo
         uses: actions/checkout@v4
@@ -26,54 +25,54 @@ jobs:
         with:
           channel: stable
 
-      - name: Show Flutter version
+      - name: Flutter version
         run: flutter --version
 
       - name: Create Android project
         run: flutter create . --platforms=android
 
-      - name: Debug: list files
-        run: |
-          echo "---- tree ----"
-          ls -la
-          echo "---- lib ----"
-          ls -la lib || true
-          echo "---- assets ----"
-          ls -la assets || true
-          echo "---- assets/data ----"
-          ls -la assets/data || true
-          echo "---- pubspec.yaml ----"
-          sed -n '1,200p' pubspec.yaml
+      - name: List root
+        run: ls -la
 
-      - name: Get packages
+      - name: List lib
+        run: ls -la lib || true
+
+      - name: List assets
+        run: ls -la assets || true
+
+      - name: List assets/data
+        run: ls -la assets/data || true
+
+      - name: Show pubspec
+        run: sed -n '1,200p' pubspec.yaml
+
+      - name: Flutter pub get
         run: flutter pub get
 
       - name: Install Android NDK 27
         env:
           ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
-        run: |
-          yes | "${ANDROID_SDK_ROOT}"/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
+        run: yes | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;27.0.12077973"
 
-      - name: Set ndkVersion in Android build files
-        shell: bash
+      - name: Patch ndkVersion (Kotlin DSL)
         run: |
-          FILE_KTS="android/app/build.gradle.kts"
-          FILE_GROOVY="android/app/build.gradle"
-          if [ -f "$FILE_KTS" ]; then
-            grep -q 'ndkVersion' "$FILE_KTS" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' "$FILE_KTS"
-          elif [ -f "$FILE_GROOVY" ]; then
-            grep -q 'ndkVersion' "$FILE_GROOVY" || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' "$FILE_GROOVY"
+          if [ -f android/app/build.gradle.kts ]; then
+            grep -q 'ndkVersion' android/app/build.gradle.kts || sed -i '0,/android\s*{/{s//android {\n    ndkVersion = "27.0.12077973"/}' android/app/build.gradle.kts
+          fi
+
+      - name: Patch ndkVersion (Groovy)
+        run: |
+          if [ -f android/app/build.gradle ]; then
+            grep -q 'ndkVersion' android/app/build.gradle || sed -i '0,/android\s*{/{s//android {\n    ndkVersion "27.0.12077973"/}' android/app/build.gradle
           fi
 
       - name: Accept Android licenses
         run: yes | flutter doctor --android-licenses || true
 
       - name: Build release APK
-        env:
-          GRADLE_OPTS: -Dorg.gradle.jvmargs='-Xmx3g -XX:MaxMetaspaceSize=1g -XX:+UseParallelGC'
         run: flutter build apk --release --no-tree-shake-icons
 
-      - name: Upload APK artifact
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: app-release-apk
