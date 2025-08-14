@@ -3,7 +3,8 @@ import 'services/background_music.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  BackgroundMusic.instance.start(); // starta bakgrundsmusiken en gång
+  // Starta bakgrundsmusiken en gång
+  BackgroundMusic.instance.start();
   runApp(const MyApp());
 }
 
