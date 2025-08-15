@@ -28,6 +28,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Debug repo folder name
+        run: |
+          echo "PWD: $PWD"
+          echo "Repo dir: $(basename "$PWD")"
+
       - name: Set up Java 17
         uses: actions/setup-java@v4
         with:
@@ -42,40 +47,23 @@ jobs:
 
       - name: Show pubspec (debug)
         run: |
-          echo "===== pubspec.yaml (first 15 lines) ====="
-          head -n 15 pubspec.yaml || true
+          echo "===== pubspec.yaml (first 12 lines) ====="
+          head -n 12 pubspec.yaml || true
           echo "========================================="
-
-      - name: Force-correct package name in pubspec.yaml
-        run: |
-          # Om name inte är exakt 'guess_the_heritage' -> skriv om raden
-          if ! grep -Eq '^[[:space:]]*name:[[:space:]]*guess_the_heritage[[:space:]]*$' pubspec.yaml; then
-            echo "⚠️  pubspec name is not 'guess_the_heritage' -> fixing…"
-            # Byter ut första 'name:'-raden i filen
-            awk 'BEGIN{fixed=0} {if(!fixed && $0 ~ /^[[:space:]]*name:[[:space:]]*/){print "name: guess_the_heritage"; fixed=1} else {print $0}}' pubspec.yaml > pubspec.yaml.tmp
-            mv pubspec.yaml.tmp pubspec.yaml
-            echo "✅  Fixed pubspec name to 'guess_the_heritage'."
-          else
-            echo "✅  pubspec name already 'guess_the_heritage'."
-          fi
-
-      - name: Commit pubspec name fix (if changed)
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: "chore(pubspec): force name guess_the_heritage"
-          branch: main
-          file_pattern: pubspec.yaml
 
       - name: Pub get
         run: flutter pub get
 
-      - name: Recreate/upgrade android folder (v2 embedding)
-        run: flutter create . --platforms=android
+      - name: Recreate/upgrade android folder (force valid project name)
+        run: |
+          # Viktigt: override projektnamn p.g.a. repo-mappens namn "Guess-the-heritage"
+          flutter create . --platforms=android --project-name guess_the_heritage
+          echo "✅ flutter create completed."
 
       - name: Commit recreated android/ (if changed)
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(android): recreate/upgrade to v2 embedding"
+          commit_message: "chore(android): recreate/upgrade to v2 embedding (forced project name)"
           branch: main
           file_pattern: |
             android/**
