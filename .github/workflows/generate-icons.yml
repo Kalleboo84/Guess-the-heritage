@@ -6,13 +6,15 @@ on:
     paths:
       - "pubspec.yaml"
       - "assets/icons/**"
+      - ".github/workflows/generate-icons.yml"
 
 permissions:
   contents: write
 
 jobs:
-  build:
+  generate:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,13 +22,13 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.2"
+          flutter-version: "3.22.2"   # eller "stable"
 
       - name: Install dependencies
         run: flutter pub get
 
       - name: Generate launcher icons
-        run: flutter pub run flutter_launcher_icons:main
+        run: flutter pub run flutter_launcher_icons
 
       - name: Commit generated icons
         uses: stefanzweifel/git-auto-commit-action@v5
