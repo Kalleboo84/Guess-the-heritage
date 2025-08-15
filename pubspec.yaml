@@ -33,3 +33,14 @@ flutter_launcher_icons:
   adaptive_icon_foreground: assets/icons/pyramid_fg.png
   adaptive_icon_background: "#FFFFFF"
   remove_alpha_ios: true
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # För inbyggd lokalisering i Flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # För att spara språkval
+  shared_preferences: ^2.2.3
