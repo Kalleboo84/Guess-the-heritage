@@ -130,21 +130,15 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
-          // 🔶 Tydlig, beskrivande 50/50-knapp med tooltip
-          Tooltip(
-            message: t('Livlina 50/50: döljer två felaktiga svar.',
-                       'Lifeline 50/50: hides two wrong choices.'),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
-              child: FilledButton.tonalIcon(
-                onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
-                icon: const Icon(Icons.percent, size: 18),
-                // ✅ interpolation istället för strängkonkatenering
-                label: Text("${t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)"),
-                style: FilledButton.styleFrom(
-                  visualDensity: VisualDensity.compact,
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                ),
+          Padding(
+            padding: const EdgeInsets.only(right: 6),
+            child: TextButton.icon(
+              onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
+              icon: const Icon(Icons.percent),
+              label: Text("${t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)"),
+              style: TextButton.styleFrom(
+                // Gör den tydlig oavsett appbar-färg
+                foregroundColor: Theme.of(context).colorScheme.primary,
               ),
             ),
           ),
