@@ -12,6 +12,8 @@ dependencies:
   cupertino_icons: ^1.0.6
   just_audio: ^0.9.39
   audio_session: ^0.1.18
+  # (valfritt) förbättrad nätbild-cache – kommentera bort om du inte vill
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
@@ -24,9 +26,8 @@ flutter:
   assets:
     - assets/audio/
     - assets/data/questions.json
-    - assets/icons/   # <-- här ligger pyramid.png och pyramid_fg.png
+    - assets/icons/   # pyramid.png + pyramid_fg.png
 
-# Konfiguration för att generera appikoner (Android + iOS)
 flutter_launcher_icons:
   android: true
   ios: true
