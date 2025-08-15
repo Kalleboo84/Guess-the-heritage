@@ -3,7 +3,7 @@ name: Fill Commons images
 on:
   workflow_dispatch: {}
 
-# ✅ GITHUB_TOKEN får rättigheter att pusha commits
+# GITHUB_TOKEN får push-rättigheter
 permissions:
   contents: write
 
@@ -11,11 +11,12 @@ jobs:
   fill:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout (with token)
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          persist-credentials: false   # vi använder token i auto-commit-steget istället
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -28,11 +29,10 @@ jobs:
       - name: Run filler
         run: python tool/fill_commons_images.py
 
-      # ✅ Pusha tillbaka ändrad questions.json med GITHUB_TOKEN
+      # Pusha tillbaka ändrad questions.json
       - name: Auto-commit changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(data): fill Commons images + attributions"
           file_pattern: assets/data/questions.json
           branch: ${{ github.ref_name }}
-          github_token: ${{ secrets.GITHUB_TOKEN }}
