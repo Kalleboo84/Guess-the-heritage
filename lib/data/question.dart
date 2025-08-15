@@ -2,8 +2,8 @@ class Question {
   final String question;
   final List<String> choices;
   final String answer;
-  final String imageUrl;     // "TBD" om saknas
-  final String attribution;  // "TBD" om saknas
+  final String imageUrl;
+  final String attribution;
   final String century;
 
   Question({
@@ -15,14 +15,23 @@ class Question {
     required this.century,
   });
 
-  factory Question.fromJson(Map<String, dynamic> j) {
+  factory Question.fromJson(Map<String, dynamic> json) {
     return Question(
-      question: j['question'] as String,
-      choices: (j['choices'] as List).map((e) => e.toString()).toList(),
-      answer: j['answer'] as String,
-      imageUrl: (j['imageUrl'] ?? '').toString(),
-      attribution: (j['attribution'] ?? '').toString(),
-      century: (j['century'] ?? '').toString(),
+      question: json['question'] as String,
+      choices: (json['choices'] as List).cast<String>(),
+      answer: json['answer'] as String,
+      imageUrl: (json['imageUrl'] as String?)?.trim() ?? '',
+      attribution: (json['attribution'] as String?)?.trim() ?? '',
+      century: (json['century'] as String?)?.trim() ?? '',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'question': question,
+        'choices': choices,
+        'answer': answer,
+        'imageUrl': imageUrl,
+        'attribution': attribution,
+        'century': century,
+      };
 }
