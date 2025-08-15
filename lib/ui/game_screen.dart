@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import '../data/question.dart';
 import '../data/question_repository.dart';
 import '../services/background_music.dart';
-import 'home_screen.dart';
+import '../services/lang.dart';
 import 'result_screen.dart';
 
 class GameScreen extends StatefulWidget {
-  final AppLocale locale;
-  const GameScreen({super.key, required this.locale});
+  const GameScreen({super.key});
 
   @override
   State<GameScreen> createState() => _GameScreenState();
@@ -30,8 +29,6 @@ class _GameScreenState extends State<GameScreen> {
 
   // 50/50: vilka val som är eliminerade på aktuell fråga
   final Set<String> _eliminated = {};
-
-  String t(String sv, String en) => widget.locale == AppLocale.sv ? sv : en;
 
   @override
   void initState() {
@@ -108,7 +105,6 @@ class _GameScreenState extends State<GameScreen> {
           correct: _score,
           wrong: _wrong,
           total: _answered,
-          locale: widget.locale,
         ),
       ),
     );
@@ -118,7 +114,7 @@ class _GameScreenState extends State<GameScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return Scaffold(
-        appBar: AppBar(title: Text(t('Spel', 'Game'))),
+        appBar: AppBar(title: Text(lang.t('Spel', 'Game'))),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -129,9 +125,12 @@ class _GameScreenState extends State<GameScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
+        title: Text(lang.t(
+          'Fråga ${_index + 1} av $total',
+          'Question ${_index + 1} of $total',
+        )),
         actions: [
-          // 🔶 UPPHÖJD & INRINGAD 50/50-knapp (pill/stadium), tydlig mot bakgrunden
+          // 🔶 UPPHÖJD & INRINGAD 50/50-knapp
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
             child: Material(
@@ -150,7 +149,7 @@ class _GameScreenState extends State<GameScreen> {
                       Icon(Icons.percent, size: 18, color: theme.colorScheme.onSecondaryContainer),
                       const SizedBox(width: 8),
                       Text(
-                        "${t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)",
+                        "${lang.t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)",
                         style: theme.textTheme.labelLarge?.copyWith(
                           color: theme.colorScheme.onSecondaryContainer,
                           fontWeight: FontWeight.w600,
@@ -167,7 +166,7 @@ class _GameScreenState extends State<GameScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          _QuestionImageBlock(question: q, locale: widget.locale),
+          _QuestionImageBlock(question: q),
           const SizedBox(height: 12),
 
           // Scoreboard
@@ -182,11 +181,11 @@ class _GameScreenState extends State<GameScreen> {
               children: [
                 const Icon(Icons.stars),
                 const SizedBox(width: 6),
-                Text(t('Poäng: $_score', 'Score: $_score')),
+                Text(lang.t('Poäng: $_score', 'Score: $_score')),
                 const SizedBox(width: 16),
                 const Icon(Icons.close),
                 const SizedBox(width: 6),
-                Text(t('Fel: $_wrong/3', 'Wrong: $_wrong/3')),
+                Text(lang.t('Fel: $_wrong/3', 'Wrong: $_wrong/3')),
                 const Spacer(),
                 const Icon(Icons.percent, size: 18),
                 const SizedBox(width: 6),
@@ -241,15 +240,15 @@ class _GameScreenState extends State<GameScreen> {
           if (!_showResult)
             FilledButton(
               onPressed: _selected == null ? null : _lockAnswer,
-              child: Text(t('Lås svar', 'Lock answer')),
+              child: Text(lang.t('Lås svar', 'Lock answer')),
             ),
 
           if (_showResult) ...[
             const SizedBox(height: 8),
             Text(
               _selected == q.answer
-                  ? t('Rätt svar! 🎉', 'Correct! 🎉')
-                  : t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
+                  ? lang.t('Rätt svar! 🎉', 'Correct! 🎉')
+                  : lang.t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -257,7 +256,7 @@ class _GameScreenState extends State<GameScreen> {
               FilledButton.icon(
                 icon: const Icon(Icons.arrow_forward),
                 onPressed: _next,
-                label: Text(t('Nästa fråga', 'Next question')),
+                label: Text(lang.t('Nästa fråga', 'Next question')),
               ),
           ],
 
@@ -276,10 +275,7 @@ class _GameScreenState extends State<GameScreen> {
 
 class _QuestionImageBlock extends StatelessWidget {
   final Question question;
-  final AppLocale locale;
-  const _QuestionImageBlock({required this.question, required this.locale});
-
-  String t(String sv, String en) => locale == AppLocale.sv ? sv : en;
+  const _QuestionImageBlock({required this.question});
 
   @override
   Widget build(BuildContext context) {
@@ -319,7 +315,7 @@ class _QuestionImageBlock extends StatelessWidget {
                 size: 48, color: Colors.black.withOpacity(0.35)),
             const SizedBox(height: 8),
             Text(
-              t('Ingen bild ännu', 'No image yet'),
+              lang.t('Ingen bild ännu', 'No image yet'),
               style: TextStyle(color: Colors.black.withOpacity(0.55)),
             ),
           ],
