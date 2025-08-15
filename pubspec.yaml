@@ -1,46 +1,37 @@
-name: guessheritage
-description: A Flutter quiz about world cultural heritage
+name: guess_heritage
+description: A heritage quiz game.
 publish_to: "none"
 version: 1.0.0+1
 
 environment:
-  sdk: ">=3.0.0 <4.0.0"
+  sdk: ">=3.3.0 <4.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  cupertino_icons: ^1.0.6
-  just_audio: ^0.9.39
-  audio_session: ^0.1.18
+
+  # Lokaliseringsstöd från Flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # Spara språkval lokalt
+  shared_preferences: ^2.2.3
+
+  # Bakgrundsmusik (du har redan en mp3)
+  just_audio: ^0.9.40
+
+  # (valfritt om du använder http i andra delar)
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^4.0.0
-  flutter_launcher_icons: ^0.13.1   # ← paketet för app-ikoner
+  flutter_lints: ^3.0.2
 
 flutter:
   uses-material-design: true
+
   assets:
-    - assets/audio/
     - assets/data/questions.json
-    - assets/icons/   # ← här ligger pyramid.png + pyramid_fg.png
-
-flutter_launcher_icons:
-  android: true
-  ios: false
-  image_path: assets/icons/pyramid.png
-  adaptive_icon_foreground: assets/icons/pyramid_fg.png
-  adaptive_icon_background: "#FFFFFF"
-  remove_alpha_ios: true
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-  # För inbyggd lokalisering i Flutter
-  flutter_localizations:
-    sdk: flutter
-
-  # För att spara språkval
-  shared_preferences: ^2.2.3
+    - assets/audio/FloridaBirds.mp3
+    - assets/icons/
