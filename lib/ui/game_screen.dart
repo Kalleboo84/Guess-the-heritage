@@ -125,20 +125,40 @@ class _GameScreenState extends State<GameScreen> {
 
     final q = _questions[_index];
     final total = _questions.length;
+    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
+          // 🔶 UPPHÖJD & INRINGAD 50/50-knapp (pill/stadium), tydlig mot bakgrunden
           Padding(
-            padding: const EdgeInsets.only(right: 6),
-            child: TextButton.icon(
-              onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
-              icon: const Icon(Icons.percent),
-              label: Text("${t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)"),
-              style: TextButton.styleFrom(
-                // Gör den tydlig oavsett appbar-färg
-                foregroundColor: Theme.of(context).colorScheme.primary,
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+            child: Material(
+              elevation: (_lifelines > 0 && !_showResult) ? 6 : 0,
+              color: theme.colorScheme.secondaryContainer,
+              shape: StadiumBorder(
+                side: BorderSide(color: theme.colorScheme.primary, width: 1),
+              ),
+              child: InkWell(
+                customBorder: const StadiumBorder(),
+                onTap: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  child: Row(
+                    children: [
+                      Icon(Icons.percent, size: 18, color: theme.colorScheme.onSecondaryContainer),
+                      const SizedBox(width: 8),
+                      Text(
+                        "${t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)",
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: theme.colorScheme.onSecondaryContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           ),
