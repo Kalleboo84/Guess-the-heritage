@@ -10,14 +10,14 @@ dependencies:
   flutter:
     sdk: flutter
 
-  # Lokaliseringsstöd från Flutter
+  # Lokaliseringsstöd
   flutter_localizations:
     sdk: flutter
 
   # Spara språkval lokalt
   shared_preferences: ^2.2.3
 
-  # Bakgrundsmusik (du har redan en mp3)
+  # Bakgrundsmusik
   just_audio: ^0.9.40
 
   # (valfritt om du använder http i andra delar)
@@ -28,6 +28,9 @@ dev_dependencies:
     sdk: flutter
   flutter_lints: ^3.0.2
 
+  # ✅ Lägg till detta paket
+  flutter_launcher_icons: ^0.13.1
+
 flutter:
   uses-material-design: true
 
@@ -35,3 +38,14 @@ flutter:
     - assets/data/questions.json
     - assets/audio/FloridaBirds.mp3
     - assets/icons/
+
+# ✅ Konfiguration för flutter_launcher_icons
+#   - ios: false  → undviker iOS-filer (du fick tidigare iOS-path-fel)
+#   - adaptive ikoner för Android 8+
+flutter_icons:
+  android: true
+  ios: false
+  image_path: assets/icons/pyramid.png
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: assets/icons/pyramid_fg.png
+  min_sdk_android: 21
