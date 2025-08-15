@@ -1,22 +1,32 @@
-name: Flutter Android (recreate android folder)
+name: Android: Build APK
 
 on:
+  workflow_dispatch:
+    inputs:
+      generate_icons:
+        description: 'Generate launcher icons before build (true/false)'
+        required: false
+        default: 'true'
   push:
     branches: [ main ]
     paths:
-      - 'lib/**'
-      - 'assets/**'
-      - 'pubspec.yaml'
-      - '.github/workflows/flutter-android.yml'
-  pull_request:
+      - "lib/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - ".github/workflows/flutter-android.yml"
 
 concurrency:
-  group: android-${{ github.ref }}
+  group: android-build-${{ github.ref }}
   cancel-in-progress: true
+
+permissions:
+  contents: write
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 40
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,11 +37,11 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Flutter (stable 3.22.2)
+      - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.2'
-          cache: true
+          flutter-version: "3.22.2"
+          channel: stable
 
       - name: Flutter doctor
         run: flutter doctor -v
@@ -39,53 +49,15 @@ jobs:
       - name: Pub get
         run: flutter pub get
 
-      # Skapa om android/ så den alltid är modern
-      - name: Recreate android/ and write valid AndroidManifest.xml
-        run: |
-          rm -rf android
-          flutter create . --platforms=android --org com.kalleboo --project-name guessheritage
-          cat > android/app/src/main/AndroidManifest.xml <<'XML'
-          <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-              <uses-permission android:name="android.permission.INTERNET"/>
-              <application
-                  android:label="guessheritage"
-                  android:name="${applicationName}"
-                  android:icon="@mipmap/ic_launcher">
-                  <activity
-                      android:name=".MainActivity"
-                      android:exported="true"
-                      android:launchMode="singleTop"
-                      android:theme="@style/LaunchTheme"
-                      android:configChanges="orientation|keyboardHidden|keyboard|screenSize|smallestScreenSize|locale|layoutDirection|fontScale|screenLayout|density|uiMode"
-                      android:hardwareAccelerated="true"
-                      android:windowSoftInputMode="adjustResize">
-                      <intent-filter>
-                          <action android:name="android.intent.action.MAIN"/>
-                          <category android:name="android.intent.category.LAUNCHER"/>
-                      </intent-filter>
-                  </activity>
-                  <meta-data
-                      android:name="io.flutter.embedding.android.NormalTheme"
-                      android:resource="@style/NormalTheme"/>
-                  <meta-data
-                      android:name="flutterEmbedding"
-                      android:value="2"/>
-              </application>
-          </manifest>
-          XML
-
-      # 🔧 GENERERA APP-IKONERNA (motsvarar "dart run flutter_launcher_icons")
-      - name: Generate launcher icons
-        run: dart run flutter_launcher_icons
-
       - name: Analyze
         run: flutter analyze
 
-      # Bygg både debug & release
-      - name: Build APKs
-        run: |
-          flutter build apk --debug --target=lib/main.dart
-          flutter build apk --release --target=lib/main.dart
+      - name: Generate launcher icons (optional)
+        if: ${{ github.event.inputs.generate_icons != 'false' }}
+        run: flutter pub run flutter_launcher_icons
+
+      - name: Build debug APK
+        run: flutter build apk --debug
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -93,8 +65,12 @@ jobs:
           name: app-debug
           path: build/app/outputs/flutter-apk/app-debug.apk
 
-      - name: Upload release APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-release
-          path: build/app/outputs/flutter-apk/app-release.apk
+      # Vill du även ha release? Avkommentera nedan.
+      # - name: Build release APK
+      #   run: flutter build apk --release
+      #
+      # - name: Upload release APK
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: app-release
+      #     path: build/app/outputs/flutter-apk/app-release.apk
