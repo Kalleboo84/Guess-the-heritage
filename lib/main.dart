@@ -5,7 +5,7 @@ import 'ui/home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await lang.load(); // ladda ev. sparat språkval
+  await lang.load(); // ladda ev. sparat språkval först
   runApp(const MyApp());
 }
 
@@ -34,22 +34,22 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       title: 'Guess the Heritage',
       debugShowCheckedModeBanner: false,
-      // ✅ Språk
+
+      // 🔤 Lokalisering
       locale: lang.materialLocale(),
-      supportedLocales: const [Locale('en'), Locale('sv')], // engelska alltid med
+      supportedLocales: const [Locale('en'), Locale('sv')],
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
-      // Om du vill: följ systemets språk om inget override är valt
       localeResolutionCallback: (device, supported) {
         if (lang.followingSystem && device != null) {
           if (device.languageCode.toLowerCase() == 'sv') {
             return const Locale('sv');
           }
         }
-        return const Locale('en');
+        return const Locale('en'); // fallback
       },
 
       theme: ThemeData(
