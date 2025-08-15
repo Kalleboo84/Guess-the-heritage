@@ -1,0 +1,90 @@
+name: Migrate to Android v2 embedding + Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      generate_icons:
+        description: 'Generate launcher icons (true/false)'
+        required: false
+        default: 'true'
+      build_apk:
+        description: 'Build debug APK (true/false)'
+        required: false
+        default: 'true'
+  push:
+    paths:
+      - "pubspec.yaml"
+      - "lib/**"
+      - "assets/**"
+      - "android/**"
+      - ".github/workflows/migrate-android-v2.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  migrate_build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.2"
+          channel: "stable"
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Ensure Android v2 embedding (create/upgrade android/)
+        run: |
+          # Skapar eller uppgraderar android/ till senaste mall (v2 embedding)
+          flutter create . --platforms=android
+
+      - name: Commit android/ updates (if changed)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(android): migrate to v2 embedding via flutter create"
+          branch: main
+          file_pattern: |
+            android/**
+            .metadata
+
+      - name: Generate launcher icons (optional)
+        if: ${{ github.event.inputs.generate_icons != 'false' }}
+        run: |
+          flutter pub run flutter_launcher_icons
+
+      - name: Commit generated icons (if changed)
+        if: ${{ github.event.inputs.generate_icons != 'false' }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(icons): generate launcher icons"
+          branch: main
+          file_pattern: |
+            android/app/src/main/res/**
+            pubspec.lock
+
+      - name: Build debug APK (optional)
+        if: ${{ github.event.inputs.build_apk != 'false' }}
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        if: ${{ github.event.inputs.build_apk != 'false' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
