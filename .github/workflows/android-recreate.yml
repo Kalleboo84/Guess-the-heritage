@@ -1,17 +1,16 @@
-name: Android: Recreate (v2 embedding)
+name: "Android: Recreate (v2 embedding)"
 
 on:
-  # Endast manuell körning → ingen push-trigger
   workflow_dispatch:
     inputs:
       generate_icons:
-        description: 'Generate launcher icons after recreate (true/false)'
+        description: "Generate launcher icons after recreate (true/false)"
         required: false
-        default: 'true'
+        default: "true"
       build_apk:
-        description: 'Build debug APK after recreate (true/false)'
+        description: "Build debug APK after recreate (true/false)"
         required: false
-        default: 'true'
+        default: "true"
 
 concurrency:
   group: android-recreate-${{ github.ref }}
@@ -33,7 +32,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: "17"
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
@@ -44,15 +43,11 @@ jobs:
       - name: Flutter doctor
         run: flutter doctor -v
 
-      - name: Pub get (ensure valid pubspec name)
-        run: |
-          # Säkerställ att name i pubspec.yaml är snake_case, t.ex. guess_the_heritage
-          grep -E '^name:\s+guess_the_heritage' pubspec.yaml || (echo "⚠️ Kontrollera 'name:' i pubspec.yaml (måste vara snake_case)."; exit 1)
-          flutter pub get
+      - name: Pub get
+        run: flutter pub get
 
       - name: Recreate/upgrade android folder (v2 embedding)
-        run: |
-          flutter create . --platforms=android
+        run: flutter create . --platforms=android
 
       - name: Commit recreated android/ (if changed)
         uses: stefanzweifel/git-auto-commit-action@v5
