@@ -1,18 +1,19 @@
 name: Flutter Android (recreate android folder)
 
 on:
-  # Gör så att du kan starta manuellt via Actions → Run workflow
+  # 👉 Ger dig "Run workflow"-knappen i Actions
   workflow_dispatch:
     inputs:
       build:
         description: 'Build APK after recreate (true/false)'
         required: false
         default: 'true'
-  # Kör även på push mot vanliga projektfiler
+  # 👉 Trigga även på push till vanliga projektfiler (inkl. test/**)
   push:
     paths:
       - "lib/**"
       - "assets/**"
+      - "test/**"
       - "pubspec.yaml"
       - "android/**"
       - ".github/workflows/android-recreate.yml"
@@ -48,8 +49,9 @@ jobs:
         run: |
           if [ ! -d android ]; then
             echo "android/ missing -> creating..."
-            flutter create .
           fi
+          # Skapar/uppgraderar android-mappen till v2-embedding
+          flutter create . --platforms=android
 
       - name: Get packages
         run: flutter pub get
