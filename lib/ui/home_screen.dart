@@ -1,21 +1,17 @@
 import 'package:flutter/material.dart';
+import '../services/lang.dart';
 import '../services/background_music.dart';
+import 'widgets/language_menu.dart';
 import 'game_screen.dart';
-
-enum AppLocale { sv, en }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  AppLocale _locale = AppLocale.sv;
-  bool _musicOn = true;
-
-  String t(String sv, String en) => _locale == AppLocale.sv ? sv : en;
-
   @override
   void initState() {
     super.initState();
@@ -24,124 +20,67 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final title = t('Guess the Heritage', 'Guess the Heritage');
-    final subtitle = t('Kulturarvsquiz med bilder & musik',
-        'Cultural Heritage Quiz with images & music');
-
+    final theme = Theme.of(context);
     return Scaffold(
-      body: Stack(
-        children: [
-          const _LeafBackground(),
-          SafeArea(
+      appBar: AppBar(
+        title: Text(lang.t('Världsarvs-quiz', 'Heritage Quiz')),
+        actions: const [
+          LanguageMenu(), // 🌍 språkval
+          SizedBox(width: 8),
+        ],
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFE6FFF6), Color(0xFFC8F3E6)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        alignment: Alignment.center,
+        padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: Card(
+            elevation: 8,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
             child: Padding(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(24.0),
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
-                    children: [
-                      DropdownButton<AppLocale>(
-                        value: _locale,
-                        onChanged: (v) => setState(() => _locale = v ?? AppLocale.sv),
-                        items: const [
-                          DropdownMenuItem(value: AppLocale.sv, child: Text('SV')),
-                          DropdownMenuItem(value: AppLocale.en, child: Text('EN')),
-                        ],
-                      ),
-                      const Spacer(),
-                      Row(
-                        children: [
-                          Icon(_musicOn ? Icons.music_note : Icons.music_off),
-                          Switch(
-                            value: _musicOn,
-                            onChanged: (v) async {
-                              setState(() => _musicOn = v);
-                              await BackgroundMusic.instance.setMuted(!v);
-                            },
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const Spacer(),
-                  // Pyramid från assets/icons/
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(
-                      'assets/icons/pyramid.png',
-                      width: 120,
-                      height: 120,
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
+                  Icon(Icons.terrain, size: 64, color: theme.colorScheme.primary),
+                  const SizedBox(height: 12),
                   Text(
-                    title,
+                    lang.t('Gissa kulturarvet!', 'Guess the Heritage!'),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    subtitle,
+                    lang.t(
+                      'Starta spelet och se hur många platser du känner igen.',
+                      'Start the game and see how many places you recognize.',
+                    ),
                     textAlign: TextAlign.center,
-                    style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 24),
-                  ElevatedButton.icon(
+                  FilledButton.icon(
                     icon: const Icon(Icons.play_arrow),
-                    label: Text(t('Starta spel', 'Start Game')),
                     onPressed: () {
                       Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (_) => GameScreen(locale: _locale),
-                        ),
+                        MaterialPageRoute(builder: (_) => const GameScreen()),
                       );
                     },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
-                    ),
+                    label: Text(lang.t('Starta spel', 'Start game')),
                   ),
-                  const Spacer(),
                 ],
               ),
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _LeafBackground extends StatelessWidget {
-  const _LeafBackground();
-
-  @override
-  Widget build(BuildContext context) {
-    final size = MediaQuery.of(context).size;
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Color(0xFFE6F4EA), Color(0xFFCDEFD8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
         ),
-      ),
-      child: Stack(
-        children: List.generate(14, (i) {
-          final double top = (i * 70) % size.height;
-          final double left = (i * 40) % size.width;
-          final double iconSize = 40 + (i % 5) * 12;
-          return Positioned(
-            top: top,
-            left: left,
-            child: Icon(
-              Icons.eco,
-              size: iconSize,
-              color: Colors.green.withOpacity(0.08 + (i % 4) * 0.03),
-            ),
-          );
-        }),
       ),
     );
   }
