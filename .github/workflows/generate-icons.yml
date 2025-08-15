@@ -1,0 +1,38 @@
+name: Generate launcher icons
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "pubspec.yaml"
+      - "assets/icons/**"
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.2"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Generate launcher icons
+        run: flutter pub run flutter_launcher_icons:main
+
+      - name: Commit generated icons
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(icons): generate launcher icons"
+          branch: main
+          file_pattern: |
+            android/app/src/main/res/**
+            pubspec.lock
