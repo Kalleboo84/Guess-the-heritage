@@ -19,16 +19,16 @@ class _GameScreenState extends State<GameScreen> {
   List<Question> _questions = [];
   int _index = 0;
 
-  int _score = 0;    // rätt
-  int _wrong = 0;    // fel
-  int _lifelines = 3; // 50/50 kvar totalt
-  int _answered = 0;
+  int _score = 0;      // rätt
+  int _wrong = 0;      // fel
+  int _lifelines = 3;  // 50/50 kvar totalt
+  int _answered = 0;   // besvarade (för accuracy)
 
   String? _selected;
   bool _showResult = false;
   bool _loading = true;
 
-  // 50/50: val som är eliminerade på aktuell fråga
+  // 50/50: vilka val som är eliminerade på aktuell fråga
   final Set<String> _eliminated = {};
 
   String t(String sv, String en) => widget.locale == AppLocale.sv ? sv : en;
@@ -82,6 +82,7 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
+    // Avsluta efter tre fel → Resultatsidan
     if (!correct && _wrong >= 3) {
       Future.delayed(const Duration(milliseconds: 350), _goToResult);
     }
@@ -93,7 +94,7 @@ class _GameScreenState extends State<GameScreen> {
         _index++;
         _selected = null;
         _showResult = false;
-        _eliminated.clear();
+        _eliminated.clear(); // ny fråga
       });
     } else {
       _goToResult();
@@ -129,13 +130,23 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
-          // ✅ 50/50 med korrekt interpolation: ($_lifelines) – inga extra {}
-          TextButton.icon(
-            onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
-            icon: const Icon(Icons.percent, size: 18),
-            label: Text('50/50 ($_lifelines)'),
+          // 🔶 Tydlig, beskrivande 50/50-knapp med tooltip
+          Tooltip(
+            message: t('Livlina 50/50: döljer två felaktiga svar.',
+                       'Lifeline 50/50: hides two wrong choices.'),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 8),
+              child: FilledButton.tonalIcon(
+                onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
+                icon: const Icon(Icons.percent, size: 18),
+                label: Text(t('Livlina 50/50', 'Lifeline 50/50') + ' ($_lifelines)'),
+                style: FilledButton.styleFrom(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                ),
+              ),
+            ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: ListView(
@@ -197,108 +208,4 @@ class _GameScreenState extends State<GameScreen> {
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: bg,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                  onPressed: (_showResult || isEliminated)
-                      ? null
-                      : () => setState(() => _selected = choice),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(choice, style: textStyle),
-                  ),
-                ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 8),
-          if (!_showResult)
-            FilledButton(
-              onPressed: _selected == null ? null : _lockAnswer,
-              child: Text(t('Lås svar', 'Lock answer')),
-            ),
-
-          if (_showResult) ...[
-            const SizedBox(height: 8),
-            Text(
-              _selected == q.answer
-                  ? t('Rätt svar! 🎉', 'Correct! 🎉')
-                  : t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            if (_wrong < 3)
-              FilledButton.icon(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: _next,
-                label: Text(t('Nästa fråga', 'Next question')),
-              ),
-          ],
-
-          const SizedBox(height: 24),
-          if (q.attribution.isNotEmpty && q.attribution != 'TBD')
-            Text(
-              q.attribution,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuestionImageBlock extends StatelessWidget {
-  final Question question;
-  final AppLocale locale;
-  const _QuestionImageBlock({required this.question, required this.locale});
-
-  String t(String sv, String en) => locale == AppLocale.sv ? sv : en;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
-    final Widget img = hasUrl
-        ? Image.network(
-            question.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _placeholder(context),
-          )
-        : _placeholder(context);
-
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: img,
-      ),
-    );
-  }
-
-  Widget _placeholder(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFDDF3E4), Color(0xFFC1E9D1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.image_not_supported_outlined,
-                size: 48, color: Colors.black.withOpacity(0.35)),
-            const SizedBox(height: 8),
-            Text(
-              t('Ingen bild ännu', 'No image yet'),
-              style: TextStyle(color: Colors.black.withOpacity(0.55)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14
