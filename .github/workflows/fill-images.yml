@@ -1,0 +1,30 @@
+name: Fill Commons images
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  fill:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deps
+        run: pip install requests
+
+      - name: Run filler
+        run: python tool/fill_commons_images.py
+
+      - name: Auto-commit updated questions.json
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): fill Commons images + attributions"
+          file_pattern: assets/data/questions.json
