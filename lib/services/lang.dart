@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Språk som stöds i appen
 enum AppLocale { en, sv }
 
-/// Global språktjänst
+/// Global språktjänst (singleton-liknande via global variabel `lang`)
 class Lang extends ChangeNotifier {
   static const _prefsKey = 'app_locale_override';
-  AppLocale? _override; // null = följ systemet
+  AppLocale? _override; // null = följ systemspråk
 
-  /// Ladda tidigare valt språk (om något) från SharedPreferences
+  /// Ladda ev. tidigare valt språk
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     final saved = prefs.getString(_prefsKey);
@@ -20,7 +21,7 @@ class Lang extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sätt ett specifikt språk, eller null för att följa systemet
+  /// Sätt ett specifikt språk, eller null för att följa system
   Future<void> setOverride(AppLocale? loc) async {
     _override = loc;
     final prefs = await SharedPreferences.getInstance();
@@ -32,15 +33,15 @@ class Lang extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Aktuellt språk (override om satt, annars systemets)
+  /// Aktuellt språk (override om satt, annars systemspråk)
   AppLocale get current => _override ?? _systemDefault();
 
   bool get followingSystem => _override == null;
 
-  /// Översättning ”på två rader”
+  /// Översättning: ge in (sv, en)
   String t(String sv, String en) => current == AppLocale.sv ? sv : en;
 
-  /// Flutter Locale för MaterialApp
+  /// Locale för MaterialApp
   Locale materialLocale() {
     switch (current) {
       case AppLocale.sv:
@@ -51,7 +52,6 @@ class Lang extends ChangeNotifier {
     }
   }
 
-  /// Läs av systemets språklista: om sv finns → sv, annars en
   AppLocale _systemDefault() {
     final locales = WidgetsBinding.instance.platformDispatcher.locales;
     for (final l in locales) {
