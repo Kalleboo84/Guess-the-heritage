@@ -20,7 +20,7 @@ dependencies:
   # Bakgrundsmusik
   just_audio: ^0.9.40
 
-  # (om du använder http)
+  # (om/när du använder http)
   http: ^1.2.2
 
 dev_dependencies:
@@ -37,7 +37,7 @@ flutter:
     - assets/audio/FloridaBirds.mp3
     - assets/icons/
 
-# Korrekt konfig-nyckel för ikoner
+# Korrekt nyckel (den gamla "flutter_icons" är deprecated)
 flutter_launcher_icons:
   android: true
   ios: false
