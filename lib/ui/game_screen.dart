@@ -139,7 +139,8 @@ class _GameScreenState extends State<GameScreen> {
               child: FilledButton.tonalIcon(
                 onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
                 icon: const Icon(Icons.percent, size: 18),
-                label: Text(t('Livlina 50/50', 'Lifeline 50/50') + ' ($_lifelines)'),
+                // ✅ interpolation istället för strängkonkatenering
+                label: Text("${t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)"),
                 style: FilledButton.styleFrom(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
