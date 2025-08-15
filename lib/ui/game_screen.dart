@@ -223,3 +223,82 @@ class _GameScreenState extends State<GameScreen> {
             Text(
               _selected == q.answer
                   ? t('Rätt svar! 🎉', 'Correct! 🎉')
+                  : t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+            if (_wrong < 3)
+              FilledButton.icon(
+                icon: const Icon(Icons.arrow_forward),
+                onPressed: _next,
+                label: Text(t('Nästa fråga', 'Next question')),
+              ),
+          ],
+
+          const SizedBox(height: 24),
+          if (q.attribution.isNotEmpty && q.attribution != 'TBD')
+            Text(
+              q.attribution,
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _QuestionImageBlock extends StatelessWidget {
+  final Question question;
+  final AppLocale locale;
+  const _QuestionImageBlock({required this.question, required this.locale});
+
+  String t(String sv, String en) => locale == AppLocale.sv ? sv : en;
+
+  @override
+  Widget build(BuildContext context) {
+    final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
+    final Widget img = hasUrl
+        ? Image.network(
+            question.imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _placeholder(context),
+          )
+        : _placeholder(context);
+
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: img,
+      ),
+    );
+  }
+
+  Widget _placeholder(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFDDF3E4), Color(0xFFC1E9D1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.image_not_supported_outlined,
+                size: 48, color: Colors.black.withOpacity(0.35)),
+            const SizedBox(height: 8),
+            Text(
+              t('Ingen bild ännu', 'No image yet'),
+              style: TextStyle(color: Colors.black.withOpacity(0.55)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
