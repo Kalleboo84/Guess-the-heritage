@@ -4,6 +4,7 @@ import '../data/question.dart';
 import '../data/question_repository.dart';
 import '../services/background_music.dart';
 import 'home_screen.dart';
+import 'result_screen.dart';
 
 class GameScreen extends StatefulWidget {
   final AppLocale locale;
@@ -18,12 +19,11 @@ class _GameScreenState extends State<GameScreen> {
   List<Question> _questions = [];
   int _index = 0;
 
-  // Score/wrong/lifelines
-  int _score = 0;
-  int _wrong = 0;
+  int _score = 0;    // rätt
+  int _wrong = 0;    // fel
   int _lifelines = 3;
+  int _answered = 0; // besvarade frågor (för accuracy)
 
-  // Selection state
   String? _selected;
   bool _showResult = false;
   bool _loading = true;
@@ -46,7 +46,7 @@ class _GameScreenState extends State<GameScreen> {
 
   void _useLifeline() {
     if (_lifelines <= 0) return;
-    setState(() => _lifelines--); // räknar ned – enkel variant enligt din spec
+    setState(() => _lifelines--); // enkel räknare
   }
 
   void _lockAnswer() {
@@ -55,6 +55,7 @@ class _GameScreenState extends State<GameScreen> {
     final correct = _selected == q.answer;
     setState(() {
       _showResult = true;
+      _answered += 1;
       if (correct) {
         _score += 1;
       } else {
@@ -62,29 +63,9 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
+    // Avsluta direkt efter tre fel → till ResultScreen
     if (!correct && _wrong >= 3) {
-      // Game over → tillbaka till start
-      Future.delayed(const Duration(milliseconds: 400), () {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (_) => AlertDialog(
-            title: Text(t('Game Over', 'Game Over')),
-            content: Text(t('Du svarade fel tre gånger.',
-                'You answered wrong three times.')),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.of(context).pop(); // stäng dialog
-                  // Tillbaka till start
-                  Navigator.of(context).popUntil((r) => r.isFirst);
-                },
-                child: Text(t('Till start', 'Home')),
-              ),
-            ],
-          ),
-        );
-      });
+      Future.delayed(const Duration(milliseconds: 350), _goToResult);
     }
   }
 
@@ -96,24 +77,22 @@ class _GameScreenState extends State<GameScreen> {
         _showResult = false;
       });
     } else {
-      // Slut på rundan → tillbaka till start
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: Text(t('Rundan är slut', 'Round finished')),
-          content: Text(t('Poäng: $_score', 'Score: $_score')),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop();
-                Navigator.of(context).popUntil((r) => r.isFirst);
-              },
-              child: Text(t('Till start', 'Home')),
-            ),
-          ],
-        ),
-      );
+      // slut på omgången
+      _goToResult();
     }
+  }
+
+  void _goToResult() {
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(
+        builder: (_) => ResultScreen(
+          correct: _score,
+          wrong: _wrong,
+          total: _answered,
+          locale: widget.locale,
+        ),
+      ),
+    );
   }
 
   @override
@@ -132,7 +111,6 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
-          // Lifelines räknare (knapp som bara minskar antal)
           TextButton.icon(
             onPressed: _lifelines > 0 ? _useLifeline : null,
             icon: const Icon(Icons.favorite, size: 18),
@@ -146,7 +124,8 @@ class _GameScreenState extends State<GameScreen> {
         children: [
           _QuestionImageBlock(question: q, locale: widget.locale),
           const SizedBox(height: 12),
-          // Scoreboard-rad
+
+          // Scoreboard
           Container(
             padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             decoration: BoxDecoration(
@@ -170,9 +149,11 @@ class _GameScreenState extends State<GameScreen> {
               ],
             ),
           ),
+
           const SizedBox(height: 12),
           Text(q.question, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
+
           ...q.choices.map((choice) {
             final selected = _selected == choice;
             final isCorrect = choice == q.answer;
@@ -192,12 +173,14 @@ class _GameScreenState extends State<GameScreen> {
               ),
             );
           }),
+
           const SizedBox(height: 8),
           if (!_showResult)
             FilledButton(
               onPressed: _selected == null ? null : _lockAnswer,
               child: Text(t('Lås svar', 'Lock answer')),
             ),
+
           if (_showResult) ...[
             const SizedBox(height: 8),
             Text(
@@ -207,12 +190,15 @@ class _GameScreenState extends State<GameScreen> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            FilledButton.icon(
-              icon: const Icon(Icons.arrow_forward),
-              onPressed: _next,
-              label: Text(t('Nästa fråga', 'Next question')),
-            ),
+            // Visa inte "Nästa" om spelet redan avslutas pga 3 fel
+            if (_wrong < 3)
+              FilledButton.icon(
+                icon: const Icon(Icons.arrow_forward),
+                onPressed: _next,
+                label: Text(t('Nästa fråga', 'Next question')),
+              ),
           ],
+
           const SizedBox(height: 24),
           if (q.attribution.isNotEmpty && q.attribution != 'TBD')
             Text(
@@ -237,17 +223,13 @@ class _QuestionImageBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
 
-    Widget img;
-    if (hasUrl) {
-      // Använd CachedNetworkImage om du aktiverat paketet, annars Image.network
-      img = Image.network(
-        question.imageUrl,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _placeholder(context),
-      );
-    } else {
-      img = _placeholder(context);
-    }
+    final Widget img = hasUrl
+        ? Image.network(
+            question.imageUrl,
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _placeholder(context),
+          )
+        : _placeholder(context);
 
     return AspectRatio(
       aspectRatio: 16 / 9,
