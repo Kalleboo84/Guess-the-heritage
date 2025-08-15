@@ -1,101 +1,73 @@
 import 'package:flutter/material.dart';
+import '../services/lang.dart';
 import 'home_screen.dart';
-import 'game_screen.dart';
 
 class ResultScreen extends StatelessWidget {
   final int correct;
   final int wrong;
-  final int total;      // antal besvarade frågor
-  final AppLocale locale;
+  final int total;
 
   const ResultScreen({
     super.key,
     required this.correct,
     required this.wrong,
     required this.total,
-    required this.locale,
   });
-
-  String t(String sv, String en) => locale == AppLocale.sv ? sv : en;
 
   @override
   Widget build(BuildContext context) {
-    final double acc = total > 0 ? correct / total : 0;
-    final percent = (acc * 100).toStringAsFixed(0);
+    final acc = total == 0 ? 0 : ((correct / total) * 100).round();
 
     return Scaffold(
-      appBar: AppBar(title: Text(t('Resultat', 'Results'))),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 480),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  t('Snyggt!', 'Nice!'),
-                  style: Theme.of(context).textTheme.headlineMedium,
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  t('Du svarade på $total frågor.', 'You answered $total questions.'),
-                ),
-                const SizedBox(height: 24),
-                _StatRow(label: t('Rätt', 'Correct'), value: '$correct'),
-                _StatRow(label: t('Fel', 'Wrong'), value: '$wrong'),
-                _StatRow(label: t('Träffsäkerhet', 'Accuracy'), value: '$percent%'),
-                const SizedBox(height: 28),
-                FilledButton.icon(
-                  icon: const Icon(Icons.home),
-                  onPressed: () {
-                    Navigator.of(context).popUntil((r) => r.isFirst); // till start
-                  },
-                  label: Text(t('Till start', 'Home')),
-                ),
-                const SizedBox(height: 12),
-                OutlinedButton.icon(
-                  icon: const Icon(Icons.refresh),
-                  onPressed: () {
-                    // Spela igen direkt
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => GameScreen(locale: locale),
-                      ),
-                    );
-                  },
-                  label: Text(t('Spela igen', 'Play again')),
-                )
-              ],
+      appBar: AppBar(
+        title: Text(lang.t('Resultat', 'Results')),
+      ),
+      body: Center(
+        child: Card(
+          elevation: 8,
+          margin: const EdgeInsets.all(24),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 480),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(lang.t('Snyggt jobbat!', 'Well done!'),
+                      style: Theme.of(context).textTheme.headlineSmall),
+                  const SizedBox(height: 12),
+                  Text(
+                    lang.t(
+                      'Rätt: $correct   Fel: $wrong   Totalt: $total',
+                      'Correct: $correct   Wrong: $wrong   Total: $total',
+                    ),
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    lang.t('Träffsäkerhet: $acc%', 'Accuracy: $acc%'),
+                    style: Theme.of(context)
+                        .textTheme
+                        .headlineSmall
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 24),
+                  FilledButton.icon(
+                    icon: const Icon(Icons.home),
+                    onPressed: () {
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const HomeScreen()),
+                        (r) => false,
+                      );
+                    },
+                    label: Text(lang.t('Till startsidan', 'Back to Home')),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _StatRow extends StatelessWidget {
-  final String label;
-  final String value;
-  const _StatRow({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: const [BoxShadow(blurRadius: 6, color: Color(0x14000000))],
-      ),
-      child: Row(
-        children: [
-          Text(label, style: Theme.of(context).textTheme.titleMedium),
-          const Spacer(),
-          Text(value, style: Theme.of(context).textTheme.titleMedium),
-        ],
       ),
     );
   }
