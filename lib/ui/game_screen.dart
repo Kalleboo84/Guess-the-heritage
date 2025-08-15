@@ -28,7 +28,7 @@ class _GameScreenState extends State<GameScreen> {
   bool _showResult = false;
   bool _loading = true;
 
-  // 50/50: vilka val som är eliminerade på aktuell fråga
+  // 50/50: val som är eliminerade på aktuell fråga
   final Set<String> _eliminated = {};
 
   String t(String sv, String en) => widget.locale == AppLocale.sv ? sv : en;
@@ -51,21 +51,17 @@ class _GameScreenState extends State<GameScreen> {
     if (_lifelines <= 0 || _showResult) return;
 
     final q = _questions[_index];
-    // Välj bland felaktiga svar som inte redan är eliminerade
     final wrongs = q.choices
         .where((c) => c != q.answer && !_eliminated.contains(c))
         .toList();
 
-    // Slumpa och ta upp till två att eliminera
     wrongs.shuffle(_rng);
     final toRemove = wrongs.take(2).toList();
-
     if (toRemove.isEmpty) return;
 
     setState(() {
       _eliminated.addAll(toRemove);
       _lifelines -= 1;
-      // Om nu valt svar råkar ha blivit eliminerat, töm valet
       if (_selected != null && _eliminated.contains(_selected!)) {
         _selected = null;
       }
@@ -86,7 +82,6 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
-    // Avsluta efter tre fel → ResultScreen
     if (!correct && _wrong >= 3) {
       Future.delayed(const Duration(milliseconds: 350), _goToResult);
     }
@@ -98,7 +93,7 @@ class _GameScreenState extends State<GameScreen> {
         _index++;
         _selected = null;
         _showResult = false;
-        _eliminated.clear(); // ny fråga = inga eliminerade
+        _eliminated.clear();
       });
     } else {
       _goToResult();
@@ -134,11 +129,11 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
-          // 50/50-knapp med räknare
+          // ✅ 50/50 med korrekt interpolation: ($_lifelines) – inga extra {}
           TextButton.icon(
             onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
             icon: const Icon(Icons.percent, size: 18),
-            label: Text('50/50 (${_lifelines})'),
+            label: Text('50/50 ($_lifelines)'),
           ),
           const SizedBox(width: 8),
         ],
@@ -228,82 +223,3 @@ class _GameScreenState extends State<GameScreen> {
             Text(
               _selected == q.answer
                   ? t('Rätt svar! 🎉', 'Correct! 🎉')
-                  : t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            if (_wrong < 3)
-              FilledButton.icon(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: _next,
-                label: Text(t('Nästa fråga', 'Next question')),
-              ),
-          ],
-
-          const SizedBox(height: 24),
-          if (q.attribution.isNotEmpty && q.attribution != 'TBD')
-            Text(
-              q.attribution,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuestionImageBlock extends StatelessWidget {
-  final Question question;
-  final AppLocale locale;
-  const _QuestionImageBlock({required this.question, required this.locale});
-
-  String t(String sv, String en) => locale == AppLocale.sv ? sv : en;
-
-  @override
-  Widget build(BuildContext context) {
-    final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
-    final Widget img = hasUrl
-        ? Image.network(
-            question.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _placeholder(context),
-          )
-        : _placeholder(context);
-
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: img,
-      ),
-    );
-  }
-
-  Widget _placeholder(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFDDF3E4), Color(0xFFC1E9D1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.image_not_supported_outlined,
-                size: 48, color: Colors.black.withOpacity(0.35)),
-            const SizedBox(height: 8),
-            Text(
-              t('Ingen bild ännu', 'No image yet'),
-              style: TextStyle(color: Colors.black.withOpacity(0.55)),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
