@@ -12,22 +12,21 @@ dependencies:
   cupertino_icons: ^1.0.6
   just_audio: ^0.9.39
   audio_session: ^0.1.18
-  # (valfritt) förbättrad nätbild-cache – kommentera bort om du inte vill
-  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^4.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.13.1   # ← paketet för app-ikoner
 
 flutter:
   uses-material-design: true
   assets:
     - assets/audio/
     - assets/data/questions.json
-    - assets/icons/   # pyramid.png + pyramid_fg.png
+    - assets/icons/   # ← här ligger pyramid.png + pyramid_fg.png
 
+# Generatorn för app-ikoner
 flutter_launcher_icons:
   android: true
   ios: true
