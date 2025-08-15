@@ -1,0 +1,80 @@
+name: Flutter Android (recreate android folder)
+
+on:
+  # Gör så att du kan starta manuellt via Actions → Run workflow
+  workflow_dispatch:
+    inputs:
+      build:
+        description: 'Build APK after recreate (true/false)'
+        required: false
+        default: 'true'
+  # Kör även på push mot vanliga projektfiler
+  push:
+    paths:
+      - "lib/**"
+      - "assets/**"
+      - "pubspec.yaml"
+      - "android/**"
+      - ".github/workflows/android-recreate.yml"
+
+permissions:
+  contents: write
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.22.2"
+          channel: "stable"
+
+      - name: Flutter doctor
+        run: flutter doctor -v
+
+      - name: Ensure android/ exists (recreate if missing)
+        run: |
+          if [ ! -d android ]; then
+            echo "android/ missing -> creating..."
+            flutter create .
+          fi
+
+      - name: Get packages
+        run: flutter pub get
+
+      - name: Prepare Gradle wrapper
+        run: |
+          cd android
+          ./gradlew --version || true
+
+      - name: Commit recreated android folder (if changed)
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(android): recreate android folder"
+          branch: main
+          file_pattern: |
+            android/**
+            .metadata
+
+      - name: Build debug APK
+        if: ${{ github.event.inputs.build != 'false' }}
+        run: flutter build apk --debug
+
+      - name: Upload APK artifact
+        if: ${{ github.event.inputs.build != 'false' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: build/app/outputs/flutter-apk/app-debug.apk
