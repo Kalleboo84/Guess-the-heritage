@@ -1,8 +1,7 @@
 import 'package:audio_session/audio_session.dart';
 import 'package:just_audio/just_audio.dart';
 
-/// Stabil bakgrundsmusik utan hack.
-/// Loopar en spellista och blandar ordning.
+/// Spelar en enda ambience-fil i loop (tystas med setMuted).
 class BackgroundMusic {
   BackgroundMusic._internal();
   static final BackgroundMusic instance = BackgroundMusic._internal();
@@ -23,19 +22,14 @@ class BackgroundMusic {
     final session = await AudioSession.instance;
     await session.configure(const AudioSessionConfiguration.music());
 
-    final playlist = ConcatenatingAudioSource(children: [
-      AudioSource.asset('assets/audio/forest.wav'),
-      AudioSource.asset('assets/audio/rain.wav'),
-      AudioSource.asset('assets/audio/wind.wav'),
-    ]);
-
-    await _player.setAudioSource(playlist, initialIndex: 0, preload: true);
-    await _player.setLoopMode(LoopMode.all);      // loopa hela listan
-    await _player.setShuffleModeEnabled(true);    // blanda ordning
+    // ✅ Spela din uppladdade fil och loopa den
+    await _player.setAsset('assets/audio/FloridaBirds.mp3');
+    await _player.setLoopMode(LoopMode.one); // loopa just detta spår
     await _player.setVolume(_muted ? 0.0 : 0.8);
     await _player.play();
   }
 
+  /// Slå av/på musik mjukt utan att stoppa (undviker hack)
   Future<void> setMuted(bool mute) async {
     _muted = mute;
     if (mute) {
