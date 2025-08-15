@@ -21,12 +21,15 @@ class _GameScreenState extends State<GameScreen> {
 
   int _score = 0;    // rätt
   int _wrong = 0;    // fel
-  int _lifelines = 3;
-  int _answered = 0; // besvarade frågor (för accuracy)
+  int _lifelines = 3; // 50/50 kvar totalt
+  int _answered = 0;
 
   String? _selected;
   bool _showResult = false;
   bool _loading = true;
+
+  // 50/50: vilka val som är eliminerade på aktuell fråga
+  final Set<String> _eliminated = {};
 
   String t(String sv, String en) => widget.locale == AppLocale.sv ? sv : en;
 
@@ -44,9 +47,29 @@ class _GameScreenState extends State<GameScreen> {
     setState(() => _loading = false);
   }
 
-  void _useLifeline() {
-    if (_lifelines <= 0) return;
-    setState(() => _lifelines--); // enkel räknare
+  void _useFiftyFifty() {
+    if (_lifelines <= 0 || _showResult) return;
+
+    final q = _questions[_index];
+    // Välj bland felaktiga svar som inte redan är eliminerade
+    final wrongs = q.choices
+        .where((c) => c != q.answer && !_eliminated.contains(c))
+        .toList();
+
+    // Slumpa och ta upp till två att eliminera
+    wrongs.shuffle(_rng);
+    final toRemove = wrongs.take(2).toList();
+
+    if (toRemove.isEmpty) return;
+
+    setState(() {
+      _eliminated.addAll(toRemove);
+      _lifelines -= 1;
+      // Om nu valt svar råkar ha blivit eliminerat, töm valet
+      if (_selected != null && _eliminated.contains(_selected!)) {
+        _selected = null;
+      }
+    });
   }
 
   void _lockAnswer() {
@@ -63,7 +86,7 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
-    // Avsluta direkt efter tre fel → till ResultScreen
+    // Avsluta efter tre fel → ResultScreen
     if (!correct && _wrong >= 3) {
       Future.delayed(const Duration(milliseconds: 350), _goToResult);
     }
@@ -75,9 +98,9 @@ class _GameScreenState extends State<GameScreen> {
         _index++;
         _selected = null;
         _showResult = false;
+        _eliminated.clear(); // ny fråga = inga eliminerade
       });
     } else {
-      // slut på omgången
       _goToResult();
     }
   }
@@ -111,10 +134,11 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
+          // 50/50-knapp med räknare
           TextButton.icon(
-            onPressed: _lifelines > 0 ? _useLifeline : null,
-            icon: const Icon(Icons.favorite, size: 18),
-            label: Text(t('Livlinor: $_lifelines', 'Lifelines: $_lifelines')),
+            onPressed: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
+            icon: const Icon(Icons.percent, size: 18),
+            label: Text('50/50 (${_lifelines})'),
           ),
           const SizedBox(width: 8),
         ],
@@ -143,7 +167,7 @@ class _GameScreenState extends State<GameScreen> {
                 const SizedBox(width: 6),
                 Text(t('Fel: $_wrong/3', 'Wrong: $_wrong/3')),
                 const Spacer(),
-                const Icon(Icons.favorite, size: 18),
+                const Icon(Icons.percent, size: 18),
                 const SizedBox(width: 6),
                 Text('$_lifelines'),
               ],
@@ -157,19 +181,37 @@ class _GameScreenState extends State<GameScreen> {
           ...q.choices.map((choice) {
             final selected = _selected == choice;
             final isCorrect = choice == q.answer;
+            final isEliminated = _eliminated.contains(choice);
+
             Color? bg;
             if (_showResult && selected) {
               bg = isCorrect ? Colors.green.shade200 : Colors.red.shade200;
             }
-            return Container(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: bg,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+
+            final textStyle = isEliminated
+                ? const TextStyle(
+                    decoration: TextDecoration.lineThrough,
+                    color: Colors.black54,
+                  )
+                : null;
+
+            return Opacity(
+              opacity: isEliminated ? 0.5 : 1.0,
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 10),
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: bg,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  ),
+                  onPressed: (_showResult || isEliminated)
+                      ? null
+                      : () => setState(() => _selected = choice),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(choice, style: textStyle),
+                  ),
                 ),
-                onPressed: _showResult ? null : () => setState(() => _selected = choice),
-                child: Align(alignment: Alignment.centerLeft, child: Text(choice)),
               ),
             );
           }),
@@ -190,7 +232,6 @@ class _GameScreenState extends State<GameScreen> {
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
-            // Visa inte "Nästa" om spelet redan avslutas pga 3 fel
             if (_wrong < 3)
               FilledButton.icon(
                 icon: const Icon(Icons.arrow_forward),
@@ -222,7 +263,6 @@ class _QuestionImageBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
-
     final Widget img = hasUrl
         ? Image.network(
             question.imageUrl,
