@@ -2,8 +2,8 @@ class Question {
   final String question;
   final List<String> choices;
   final String answer;
-  final String imageUrl;     // Kan vara "TBD"
-  final String attribution;  // Kan vara "TBD"
+  final String imageUrl;     // "TBD" om saknas
+  final String attribution;  // "TBD" om saknas
   final String century;
 
   Question({
