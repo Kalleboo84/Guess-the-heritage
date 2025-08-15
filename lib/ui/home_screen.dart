@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/background_music.dart';
 import 'game_screen.dart';
 
-/// Enkel språkväxel
 enum AppLocale { sv, en }
 
 class HomeScreen extends StatefulWidget {
@@ -20,7 +19,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Starta musiken på startsidan
     BackgroundMusic.instance.ensureStarted();
   }
 
@@ -39,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(20),
               child: Column(
                 children: [
-                  // Topp: språk + musik
                   Row(
                     children: [
                       DropdownButton<AppLocale>(
@@ -66,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const Spacer(),
-                  // 🔹 Pyramid-ikon från assets/icons/
+                  // Pyramid från assets/icons/
                   ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: Image.asset(
@@ -104,23 +101,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.settings),
-                        label: Text(t('Inställningar', 'Settings')),
-                        onPressed: () {},
-                      ),
-                      const SizedBox(width: 12),
-                      OutlinedButton.icon(
-                        icon: const Icon(Icons.info_outline),
-                        label: Text(t('Om', 'About')),
-                        onPressed: () {},
-                      ),
-                    ],
                   ),
                   const Spacer(),
                 ],
