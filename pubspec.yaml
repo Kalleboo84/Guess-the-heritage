@@ -26,10 +26,9 @@ flutter:
     - assets/data/questions.json
     - assets/icons/   # ← här ligger pyramid.png + pyramid_fg.png
 
-# Generatorn för app-ikoner
 flutter_launcher_icons:
   android: true
-  ios: true
+  ios: false
   image_path: assets/icons/pyramid.png
   adaptive_icon_foreground: assets/icons/pyramid_fg.png
   adaptive_icon_background: "#FFFFFF"
