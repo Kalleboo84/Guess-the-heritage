@@ -1,4 +1,4 @@
-name: guess_heritage
+name: guess_the_heritage
 description: A heritage quiz game.
 publish_to: "none"
 version: 1.0.0+1
@@ -10,11 +10,17 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # Lokaliseringsstöd
   flutter_localizations:
     sdk: flutter
 
+  # Spara språkval lokalt
   shared_preferences: ^2.2.3
+
+  # Bakgrundsmusik
   just_audio: ^0.9.40
+
+  # (om du använder http)
   http: ^1.2.2
 
 dev_dependencies:
@@ -31,7 +37,7 @@ flutter:
     - assets/audio/FloridaBirds.mp3
     - assets/icons/
 
-# ✅ Ny korrekt konfig-nyckel för paketet
+# Korrekt konfig-nyckel för ikoner
 flutter_launcher_icons:
   android: true
   ios: false
