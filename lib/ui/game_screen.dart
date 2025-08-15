@@ -14,12 +14,19 @@ class GameScreen extends StatefulWidget {
 }
 
 class _GameScreenState extends State<GameScreen> {
+  final _rng = Random();
   List<Question> _questions = [];
   int _index = 0;
+
+  // Score/wrong/lifelines
+  int _score = 0;
+  int _wrong = 0;
   int _lifelines = 3;
-  bool _loading = true;
-  String? _selected; // valt svar
+
+  // Selection state
+  String? _selected;
   bool _showResult = false;
+  bool _loading = true;
 
   String t(String sv, String en) => widget.locale == AppLocale.sv ? sv : en;
 
@@ -27,22 +34,58 @@ class _GameScreenState extends State<GameScreen> {
   void initState() {
     super.initState();
     _load();
-    // säkerställ att musiken är igång även här
     BackgroundMusic.instance.ensureStarted();
   }
 
   Future<void> _load() async {
     final all = await QuestionRepository.loadFromAssets();
-    all.shuffle(Random());
-    // 30 frågor per runda (eller färre om det inte finns)
+    all.shuffle(_rng);
     _questions = all.take(30).toList();
     setState(() => _loading = false);
   }
 
   void _useLifeline() {
     if (_lifelines <= 0) return;
-    setState(() => _lifelines--);
-    // (Framöver: ta bort två felaktiga svar här.)
+    setState(() => _lifelines--); // räknar ned – enkel variant enligt din spec
+  }
+
+  void _lockAnswer() {
+    if (_selected == null) return;
+    final q = _questions[_index];
+    final correct = _selected == q.answer;
+    setState(() {
+      _showResult = true;
+      if (correct) {
+        _score += 1;
+      } else {
+        _wrong += 1;
+      }
+    });
+
+    if (!correct && _wrong >= 3) {
+      // Game over → tillbaka till start
+      Future.delayed(const Duration(milliseconds: 400), () {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => AlertDialog(
+            title: Text(t('Game Over', 'Game Over')),
+            content: Text(t('Du svarade fel tre gånger.',
+                'You answered wrong three times.')),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop(); // stäng dialog
+                  // Tillbaka till start
+                  Navigator.of(context).popUntil((r) => r.isFirst);
+                },
+                child: Text(t('Till start', 'Home')),
+              ),
+            ],
+          ),
+        );
+      });
+    }
   }
 
   void _next() {
@@ -53,30 +96,19 @@ class _GameScreenState extends State<GameScreen> {
         _showResult = false;
       });
     } else {
-      // slut på rundan
+      // Slut på rundan → tillbaka till start
       showDialog(
         context: context,
         builder: (_) => AlertDialog(
           title: Text(t('Rundan är slut', 'Round finished')),
-          content: Text(t('Bra jobbat! Vill du spela igen?',
-                          'Nice! Do you want to play again?')),
+          content: Text(t('Poäng: $_score', 'Score: $_score')),
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop(); // stäng dialog
-                Navigator.of(context).pop(); // tillbaka till start
-              },
-              child: Text(t('Till startsida', 'Home')),
-            ),
-            FilledButton(
-              onPressed: () {
                 Navigator.of(context).pop();
-                _index = 0;
-                _selected = null;
-                _showResult = false;
-                _load();
+                Navigator.of(context).popUntil((r) => r.isFirst);
               },
-              child: Text(t('Spela igen', 'Play again')),
+              child: Text(t('Till start', 'Home')),
             ),
           ],
         ),
@@ -100,14 +132,11 @@ class _GameScreenState extends State<GameScreen> {
       appBar: AppBar(
         title: Text(t('Fråga ${_index + 1} av $total', 'Question ${_index + 1} of $total')),
         actions: [
-          // Livlinor-knapp + räknare
+          // Lifelines räknare (knapp som bara minskar antal)
           TextButton.icon(
             onPressed: _lifelines > 0 ? _useLifeline : null,
             icon: const Icon(Icons.favorite, size: 18),
             label: Text(t('Livlinor: $_lifelines', 'Lifelines: $_lifelines')),
-            style: TextButton.styleFrom(
-              foregroundColor: _lifelines > 0 ? Theme.of(context).colorScheme.primary : Colors.grey,
-            ),
           ),
           const SizedBox(width: 8),
         ],
@@ -117,10 +146,32 @@ class _GameScreenState extends State<GameScreen> {
         children: [
           _QuestionImageBlock(question: q, locale: widget.locale),
           const SizedBox(height: 12),
-          Text(
-            q.question,
-            style: Theme.of(context).textTheme.titleLarge,
+          // Scoreboard-rad
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: const [BoxShadow(blurRadius: 6, color: Color(0x14000000))],
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.stars),
+                const SizedBox(width: 6),
+                Text(t('Poäng: $_score', 'Score: $_score')),
+                const SizedBox(width: 16),
+                const Icon(Icons.close),
+                const SizedBox(width: 6),
+                Text(t('Fel: $_wrong/3', 'Wrong: $_wrong/3')),
+                const Spacer(),
+                const Icon(Icons.favorite, size: 18),
+                const SizedBox(width: 6),
+                Text('$_lifelines'),
+              ],
+            ),
           ),
+          const SizedBox(height: 12),
+          Text(q.question, style: Theme.of(context).textTheme.titleLarge),
           const SizedBox(height: 16),
           ...q.choices.map((choice) {
             final selected = _selected == choice;
@@ -136,22 +187,15 @@ class _GameScreenState extends State<GameScreen> {
                   backgroundColor: bg,
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
                 ),
-                onPressed: _showResult
-                    ? null
-                    : () => setState(() => _selected = choice),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(choice),
-                ),
+                onPressed: _showResult ? null : () => setState(() => _selected = choice),
+                child: Align(alignment: Alignment.centerLeft, child: Text(choice)),
               ),
             );
           }),
           const SizedBox(height: 8),
           if (!_showResult)
             FilledButton(
-              onPressed: _selected == null
-                  ? null
-                  : () => setState(() => _showResult = true),
+              onPressed: _selected == null ? null : _lockAnswer,
               child: Text(t('Lås svar', 'Lock answer')),
             ),
           if (_showResult) ...[
@@ -159,7 +203,7 @@ class _GameScreenState extends State<GameScreen> {
             Text(
               _selected == q.answer
                   ? t('Rätt svar! 🎉', 'Correct! 🎉')
-                  : t('Fel svar. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
+                  : t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
               style: Theme.of(context).textTheme.titleMedium,
             ),
             const SizedBox(height: 8),
@@ -192,47 +236,50 @@ class _QuestionImageBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
+
+    Widget img;
     if (hasUrl) {
-      return AspectRatio(
-        aspectRatio: 16 / 9,
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
-          child: Image.network(
-            question.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _placeholder(context),
-          ),
-        ),
+      // Använd CachedNetworkImage om du aktiverat paketet, annars Image.network
+      img = Image.network(
+        question.imageUrl,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _placeholder(context),
       );
+    } else {
+      img = _placeholder(context);
     }
-    return _placeholder(context);
+
+    return AspectRatio(
+      aspectRatio: 16 / 9,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16),
+        child: img,
+      ),
+    );
   }
 
   Widget _placeholder(BuildContext context) {
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: const LinearGradient(
-            colors: [Color(0xFFDDF3E4), Color(0xFFC1E9D1)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: const LinearGradient(
+          colors: [Color(0xFFDDF3E4), Color(0xFFC1E9D1)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.image_not_supported_outlined,
-                  size: 48, color: Colors.black.withOpacity(0.35)),
-              const SizedBox(height: 8),
-              Text(
-                t('Ingen bild ännu', 'No image yet'),
-                style: TextStyle(color: Colors.black.withOpacity(0.55)),
-              ),
-            ],
-          ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.image_not_supported_outlined,
+                size: 48, color: Colors.black.withOpacity(0.35)),
+            const SizedBox(height: 8),
+            Text(
+              t('Ingen bild ännu', 'No image yet'),
+              style: TextStyle(color: Colors.black.withOpacity(0.55)),
+            ),
+          ],
         ),
       ),
     );
