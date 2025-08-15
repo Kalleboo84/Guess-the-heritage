@@ -1,30 +1,29 @@
-name: Flutter Android (recreate android folder)
+name: Android: Recreate (v2 embedding)
 
 on:
-  # 👉 Ger dig "Run workflow"-knappen i Actions
+  # Endast manuell körning → ingen push-trigger
   workflow_dispatch:
     inputs:
-      build:
-        description: 'Build APK after recreate (true/false)'
+      generate_icons:
+        description: 'Generate launcher icons after recreate (true/false)'
         required: false
         default: 'true'
-  # 👉 Trigga även på push till vanliga projektfiler (inkl. test/**)
-  push:
-    paths:
-      - "lib/**"
-      - "assets/**"
-      - "test/**"
-      - "pubspec.yaml"
-      - "android/**"
-      - ".github/workflows/android-recreate.yml"
+      build_apk:
+        description: 'Build debug APK after recreate (true/false)'
+        required: false
+        default: 'true'
+
+concurrency:
+  group: android-recreate-${{ github.ref }}
+  cancel-in-progress: true
 
 permissions:
   contents: write
 
 jobs:
-  android:
+  recreate:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       - name: Checkout
@@ -40,42 +39,50 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           flutter-version: "3.22.2"
-          channel: "stable"
+          channel: stable
 
       - name: Flutter doctor
         run: flutter doctor -v
 
-      - name: Ensure android/ exists (recreate if missing)
+      - name: Pub get (ensure valid pubspec name)
         run: |
-          if [ ! -d android ]; then
-            echo "android/ missing -> creating..."
-          fi
-          # Skapar/uppgraderar android-mappen till v2-embedding
+          # Säkerställ att name i pubspec.yaml är snake_case, t.ex. guess_the_heritage
+          grep -E '^name:\s+guess_the_heritage' pubspec.yaml || (echo "⚠️ Kontrollera 'name:' i pubspec.yaml (måste vara snake_case)."; exit 1)
+          flutter pub get
+
+      - name: Recreate/upgrade android folder (v2 embedding)
+        run: |
           flutter create . --platforms=android
 
-      - name: Get packages
-        run: flutter pub get
-
-      - name: Prepare Gradle wrapper
-        run: |
-          cd android
-          ./gradlew --version || true
-
-      - name: Commit recreated android folder (if changed)
+      - name: Commit recreated android/ (if changed)
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "chore(android): recreate android folder"
+          commit_message: "chore(android): recreate/upgrade to v2 embedding"
           branch: main
           file_pattern: |
             android/**
             .metadata
 
-      - name: Build debug APK
-        if: ${{ github.event.inputs.build != 'false' }}
+      - name: Generate launcher icons (optional)
+        if: ${{ github.event.inputs.generate_icons != 'false' }}
+        run: flutter pub run flutter_launcher_icons
+
+      - name: Commit icons (if changed)
+        if: ${{ github.event.inputs.generate_icons != 'false' }}
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(icons): generate launcher icons"
+          branch: main
+          file_pattern: |
+            android/app/src/main/res/**
+            pubspec.lock
+
+      - name: Build debug APK (optional)
+        if: ${{ github.event.inputs.build_apk != 'false' }}
         run: flutter build apk --debug
 
-      - name: Upload APK artifact
-        if: ${{ github.event.inputs.build != 'false' }}
+      - name: Upload debug APK
+        if: ${{ github.event.inputs.build_apk != 'false' }}
         uses: actions/upload-artifact@v4
         with:
           name: app-debug
