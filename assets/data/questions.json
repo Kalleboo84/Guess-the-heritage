@@ -248,17 +248,17 @@
       "century": "1100–1200-talet"
     },
     {
-     "question": "Vilken fästning i Halland, Sverige, syns här?",
-  "choices": [
-    "Varbergs fästning",
-    "Halmstads slott",
-    "Älvsborgs fästning",
-    "Borgholms slott"
-  ],
-  "answer": "Varbergs fästning",
-  "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Varbergs_f%C3%A4stning_fr%C3%A5n_s%C3%B6der.jpg/1280px-Varbergs_f%C3%A4stning_fr%C3%A5n_s%C3%B6der.jpg",
-  "attribution": "David J — CC BY 2.0 (via Wikimedia Commons)",
-  "century": "1200–1600-talet"
+      "question": "Vilken fästning i Halland, Sverige, syns här?",
+      "choices": [
+        "Varbergs fästning",
+        "Halmstads slott",
+        "Älvsborgs fästning",
+        "Borgholms slott"
+      ],
+      "answer": "Varbergs fästning",
+      "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/0/09/Varberg_Fortress%2C_Halland%2C_Sweden_%2810974928675%29.jpg",
+      "attribution": "Swedish National Heritage Board from Sweden — Public domain (via Wikimedia Commons)",
+      "century": "1200–1600-talet"
     },
     {
       "question": "Vilken citadell i Afghanistan är detta?",
