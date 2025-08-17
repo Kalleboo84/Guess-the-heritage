@@ -1,11 +1,16 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:guess_the_heritage/ui/home_screen.dart';
 import 'package:guess_the_heritage/services/background_music.dart' as music;
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  await music.BackgroundMusic.instance.init();
+
+  // Rita UI direkt
   runApp(const MyApp());
+
+  // Initiera bakgrundsmusiken i bakgrunden (blockerar inte start)
+  unawaited(music.BackgroundMusic.instance.init());
 }
 
 class MyApp extends StatelessWidget {
@@ -13,7 +18,6 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Enda ändringen: MaterialApp är nu const (ingen UI-förändring)
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
       home: HomeScreen(),
