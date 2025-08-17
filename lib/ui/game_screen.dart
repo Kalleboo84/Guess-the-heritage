@@ -1,324 +1,287 @@
-import 'dart:math';
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
-import '../data/question.dart';
-import '../data/question_repository.dart';
-import '../services/background_music.dart';
+
 import '../services/lang.dart';
-import 'result_screen.dart';
+import '../services/background_music.dart';
+import 'game_screen.dart';
 
-class GameScreen extends StatefulWidget {
-  const GameScreen({super.key});
-
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
   @override
-  State<GameScreen> createState() => _GameScreenState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _GameScreenState extends State<GameScreen> {
-  final _rng = Random();
-  List<Question> _questions = [];
-  int _index = 0;
-
-  int _score = 0;      // rätt
-  int _wrong = 0;      // fel
-  int _lifelines = 3;  // 50/50 kvar totalt
-  int _answered = 0;   // besvarade (för accuracy)
-
-  String? _selected;
-  bool _showResult = false;
-  bool _loading = true;
-
-  // 50/50: vilka val som är eliminerade på aktuell fråga
-  final Set<String> _eliminated = {};
-
+class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _load();
-    BackgroundMusic.instance.ensureStarted();
+    lang.addListener(_onChange);
+    BackgroundMusic.instance.addListener(_onChange);
   }
 
-  Future<void> _load() async {
-    final all = await QuestionRepository.loadFromAssets();
-    all.shuffle(_rng);
-    _questions = all.take(30).toList();
-    setState(() => _loading = false);
-  }
-
-  void _useFiftyFifty() {
-    if (_lifelines <= 0 || _showResult) return;
-
-    final q = _questions[_index];
-    final wrongs = q.choices
-        .where((c) => c != q.answer && !_eliminated.contains(c))
-        .toList();
-
-    wrongs.shuffle(_rng);
-    final toRemove = wrongs.take(2).toList();
-    if (toRemove.isEmpty) return;
-
-    setState(() {
-      _eliminated.addAll(toRemove);
-      _lifelines -= 1;
-      if (_selected != null && _eliminated.contains(_selected!)) {
-        _selected = null;
-      }
-    });
-  }
-
-  void _lockAnswer() {
-    if (_selected == null) return;
-    final q = _questions[_index];
-    final correct = _selected == q.answer;
-    setState(() {
-      _showResult = true;
-      _answered += 1;
-      if (correct) {
-        _score += 1;
-      } else {
-        _wrong += 1;
-      }
-    });
-
-    // Avsluta efter tre fel → Resultatsidan
-    if (!correct && _wrong >= 3) {
-      Future.delayed(const Duration(milliseconds: 350), _goToResult);
-    }
-  }
-
-  void _next() {
-    if (_index < _questions.length - 1) {
-      setState(() {
-        _index++;
-        _selected = null;
-        _showResult = false;
-        _eliminated.clear(); // ny fråga
-      });
-    } else {
-      _goToResult();
-    }
-  }
-
-  void _goToResult() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (_) => ResultScreen(
-          correct: _score,
-          wrong: _wrong,
-          total: _answered,
-        ),
-      ),
-    );
+  void _onChange() => setState(() {});
+  @override
+  void dispose() {
+    lang.removeListener(_onChange);
+    BackgroundMusic.instance.removeListener(_onChange);
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return Scaffold(
-        appBar: AppBar(title: Text(lang.t('Spel', 'Game'))),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    final q = _questions[_index];
-    final total = _questions.length;
-    final theme = Theme.of(context);
+    final title = t('Gissa kulturarvet', 'Guess the Heritage');
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(lang.t(
-          'Fråga ${_index + 1} av $total',
-          'Question ${_index + 1} of $total',
-        )),
-        actions: [
-          // 🔶 UPPHÖJD & INRINGAD 50/50-knapp
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
-            child: Material(
-              elevation: (_lifelines > 0 && !_showResult) ? 6 : 0,
-              color: theme.colorScheme.secondaryContainer,
-              shape: StadiumBorder(
-                side: BorderSide(color: theme.colorScheme.primary, width: 1),
-              ),
-              child: InkWell(
-                customBorder: const StadiumBorder(),
-                onTap: (_lifelines > 0 && !_showResult) ? _useFiftyFifty : null,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Row(
-                    children: [
-                      Icon(Icons.percent, size: 18, color: theme.colorScheme.onSecondaryContainer),
-                      const SizedBox(width: 8),
-                      Text(
-                        "${lang.t('Livlina 50/50', 'Lifeline 50/50')} ($_lifelines)",
-                        style: theme.textTheme.labelLarge?.copyWith(
-                          color: theme.colorScheme.onSecondaryContainer,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const _LeafBackground(), // 🌿 blad-bakgrund
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                children: [
+                  // Topp: Ljudknapp + Språkval
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      _SoundToggle(),
+                      _LanguageMenu(),
                     ],
                   ),
-                ),
+                  const Spacer(),
+                  // Titel
+                  Text(
+                    title,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 34,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  // Start-knapp
+                  SizedBox(
+                    width: 260,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                      ),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(builder: (_) => const GameScreen()),
+                        );
+                      },
+                      icon: const Icon(Icons.play_arrow, size: 28),
+                      label: Text(
+                        t('Starta spel', 'Start game'),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    t('Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
+                      'Tip: You can change language and toggle music in the top corners.'),
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: Colors.black.withOpacity(0.7),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _QuestionImageBlock(question: q),
-          const SizedBox(height: 12),
-
-          // Scoreboard
-          Container(
-            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              boxShadow: const [BoxShadow(blurRadius: 6, color: Color(0x14000000))],
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.stars),
-                const SizedBox(width: 6),
-                Text(lang.t('Poäng: $_score', 'Score: $_score')),
-                const SizedBox(width: 16),
-                const Icon(Icons.close),
-                const SizedBox(width: 6),
-                Text(lang.t('Fel: $_wrong/3', 'Wrong: $_wrong/3')),
-                const Spacer(),
-                const Icon(Icons.percent, size: 18),
-                const SizedBox(width: 6),
-                Text('$_lifelines'),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 12),
-          Text(q.question, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 16),
-
-          ...q.choices.map((choice) {
-            final selected = _selected == choice;
-            final isCorrect = choice == q.answer;
-            final isEliminated = _eliminated.contains(choice);
-
-            Color? bg;
-            if (_showResult && selected) {
-              bg = isCorrect ? Colors.green.shade200 : Colors.red.shade200;
-            }
-
-            final textStyle = isEliminated
-                ? const TextStyle(
-                    decoration: TextDecoration.lineThrough,
-                    color: Colors.black54,
-                  )
-                : null;
-
-            return Opacity(
-              opacity: isEliminated ? 0.5 : 1.0,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 10),
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: bg,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-                  ),
-                  onPressed: (_showResult || isEliminated)
-                      ? null
-                      : () => setState(() => _selected = choice),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(choice, style: textStyle),
-                  ),
-                ),
-              ),
-            );
-          }),
-
-          const SizedBox(height: 8),
-          if (!_showResult)
-            FilledButton(
-              onPressed: _selected == null ? null : _lockAnswer,
-              child: Text(lang.t('Lås svar', 'Lock answer')),
-            ),
-
-          if (_showResult) ...[
-            const SizedBox(height: 8),
-            Text(
-              _selected == q.answer
-                  ? lang.t('Rätt svar! 🎉', 'Correct! 🎉')
-                  : lang.t('Fel. Rätt var: ${q.answer}', 'Wrong. Correct: ${q.answer}'),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            if (_wrong < 3)
-              FilledButton.icon(
-                icon: const Icon(Icons.arrow_forward),
-                onPressed: _next,
-                label: Text(lang.t('Nästa fråga', 'Next question')),
-              ),
-          ],
-
-          const SizedBox(height: 24),
-          if (q.attribution.isNotEmpty && q.attribution != 'TBD')
-            Text(
-              q.attribution,
-              textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-            ),
         ],
       ),
     );
   }
 }
 
-class _QuestionImageBlock extends StatelessWidget {
-  final Question question;
-  const _QuestionImageBlock({required this.question});
+/// 🌿 Blad-bakgrund på mjuk gradient
+class _LeafBackground extends StatelessWidget {
+  const _LeafBackground({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final hasUrl = question.imageUrl.isNotEmpty && question.imageUrl != 'TBD';
-    final Widget img = hasUrl
-        ? Image.network(
-            question.imageUrl,
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _placeholder(context),
-          )
-        : _placeholder(context);
+    final colors = [const Color(0xFFE8F5E9), const Color(0xFFFFFFFF)];
+    final leaves = _leafs;
 
-    return AspectRatio(
-      aspectRatio: 16 / 9,
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16),
-        child: img,
+    return IgnorePointer(
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: colors,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Stack(
+          children: [
+            for (final leaf in leaves)
+              Positioned(
+                top: leaf.top,
+                left: leaf.left,
+                child: Transform.rotate(
+                  angle: leaf.angle,
+                  child: Icon(
+                    Icons.eco_rounded,
+                    size: leaf.size,
+                    color: Colors.teal.withOpacity(leaf.opacity),
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
+}
 
-  Widget _placeholder(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
-        gradient: const LinearGradient(
-          colors: [Color(0xFFDDF3E4), Color(0xFFC1E9D1)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.image_not_supported_outlined,
-                size: 48, color: Colors.black.withOpacity(0.35)),
-            const SizedBox(height: 8),
-            Text(
-              lang.t('Ingen bild ännu', 'No image yet'),
-              style: TextStyle(color: Colors.black.withOpacity(0.55)),
+class _LeafSpec {
+  final double top, left, size, angle, opacity;
+  const _LeafSpec(this.top, this.left, this.size, this.angle, this.opacity);
+}
+
+const _leafs = <_LeafSpec>[
+  _LeafSpec(40, 24, 56, 0.5, 0.20),
+  _LeafSpec(120, 300, 84, -0.7, 0.15),
+  _LeafSpec(220, 40, 42, 0.3, 0.12),
+  _LeafSpec(340, 200, 96, 0.9, 0.10),
+  _LeafSpec(480, 16, 64, -0.4, 0.14),
+  _LeafSpec(520, 280, 52, 0.2, 0.16),
+  _LeafSpec(640, 180, 76, -0.9, 0.12),
+];
+
+/// 🔊 Ljudknapp (på/av)
+class _SoundToggle extends StatelessWidget {
+  const _SoundToggle();
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: BackgroundMusic.instance,
+      builder: (_, __) {
+        final on = BackgroundMusic.instance.enabled;
+        final label = on ? t('Ljud på', 'Sound on') : t('Ljud av', 'Sound off');
+        final icon = on ? Icons.volume_up_rounded : Icons.volume_off_rounded;
+
+        return Material(
+          elevation: 4,
+          shape: const StadiumBorder(),
+          color: Colors.white,
+          child: InkWell(
+            customBorder: const StadiumBorder(),
+            onTap: () => BackgroundMusic.instance.toggle(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(icon, color: on ? Colors.teal : Colors.grey.shade600),
+                  const SizedBox(width: 8),
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: on ? Colors.teal : Colors.grey.shade800,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// 🌐 Språkval: Svenska / English / Följ system
+class _LanguageMenu extends StatelessWidget {
+  const _LanguageMenu();
+
+  @override
+  Widget build(BuildContext context) {
+    final code = lang.currentCode();
+    final isSv = code.startsWith('sv');
+    final isEn = code.startsWith('en');
+    final following = lang.followingSystem;
+
+    String currentText;
+    if (following) {
+      currentText = t('Systemspråk', 'System language');
+    } else {
+      currentText = isSv ? 'Svenska' : 'English';
+    }
+
+    return PopupMenuButton<String>(
+      tooltip: t('Byt språk', 'Change language'),
+      onSelected: (value) async {
+        if (value == 'sv') {
+          await lang.setLocale(const Locale('sv'));
+        } else if (value == 'en') {
+          await lang.setLocale(const Locale('en'));
+        } else if (value == 'sys') {
+          await lang.followSystem();
+        }
+      },
+      itemBuilder: (context) => [
+        PopupMenuItem<String>(
+          value: 'sv',
+          child: Row(
+            children: [
+              if (!following && isSv) const Icon(Icons.check, size: 18),
+              if (!following && isSv) const SizedBox(width: 8),
+              const Text('Svenska'),
+            ],
+          ),
+        ),
+        PopupMenuItem<String>(
+          value: 'en',
+          child: Row(
+            children: [
+              if (!following && isEn) const Icon(Icons.check, size: 18),
+              if (!following && isEn) const SizedBox(width: 8),
+              const Text('English'),
+            ],
+          ),
+        ),
+        const PopupMenuDivider(),
+        PopupMenuItem<String>(
+          value: 'sys',
+          child: Row(
+            children: [
+              if (following) const Icon(Icons.check, size: 18),
+              if (following) const SizedBox(width: 8),
+              Text(t('Följ systemspråk', 'Follow system language')),
+            ],
+          ),
+        ),
+      ],
+      child: Material(
+        elevation: 4,
+        color: Colors.white,
+        shape: StadiumBorder(side: BorderSide(color: Colors.teal.withOpacity(0.3))),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.language_rounded, color: Colors.teal),
+              const SizedBox(width: 8),
+              Text(currentText, style: const TextStyle(fontWeight: FontWeight.w600)),
+              const SizedBox(width: 4),
+              const Icon(Icons.expand_more_rounded, color: Colors.black54),
+            ],
+          ),
         ),
       ),
     );
