@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:guess_the_heritage/ui/home_screen.dart'; // korrekt package-import
-import 'services/background_music.dart' as music;
+import 'package:guess_the_heritage/ui/home_screen.dart';
+import 'package:guess_the_heritage/services/background_music.dart' as music;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Initiera bakgrundsmusiken (påverkar inte UI)
   await music.BackgroundMusic.instance.init();
   runApp(const MyApp());
 }
@@ -14,10 +13,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
+    // Viktigt: inte const MaterialApp (annars "invalid constant" om något inuti inte är helt const)
+    return MaterialApp(
       debugShowCheckedModeBanner: false,
-      // Inga UI-förändringar här, bara visar startsidan
-      home: HomeScreen(),
+      home: const HomeScreen(),
     );
   }
 }
