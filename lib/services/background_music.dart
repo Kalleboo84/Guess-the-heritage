@@ -1,56 +1,49 @@
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart';
+import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Enkel språkservice: SV/EN + "följ system"
-class Lang extends ChangeNotifier {
-  static const _kLangCode = 'app_lang_code';
-  static const _kFollowSystem = 'follow_system';
+/// Bakgrundsmusik med på/av + loop. Är en ChangeNotifier (har addListener/removeListener).
+class BackgroundMusic extends ChangeNotifier {
+  static final BackgroundMusic instance = BackgroundMusic._();
+  BackgroundMusic._();
 
-  bool followingSystem = true;
-  Locale? _locale; // null = följ systemet
+  static const _kMusicEnabled = 'music_enabled';
 
-  Future<void> load() async {
+  final AudioPlayer _player = AudioPlayer();
+  bool _enabled = true;
+
+  bool get enabled => _enabled;
+
+  Future<void> init() async {
     final sp = await SharedPreferences.getInstance();
-    followingSystem = sp.getBool(_kFollowSystem) ?? true;
-    final savedCode = sp.getString(_kLangCode);
-    if (!followingSystem && savedCode != null && savedCode.isNotEmpty) {
-      _locale = Locale(savedCode.toLowerCase());
+    _enabled = sp.getBool(_kMusicEnabled) ?? true;
+
+    try {
+      await _player.setAudioSource(
+        AudioSource.asset('assets/audio/FloridaBirds.mp3'),
+      );
+      await _player.setLoopMode(LoopMode.one);
+      await _player.setVolume(0.6);
+      if (_enabled) {
+        await _player.play();
+      }
+    } catch (_) {
+      // Ignorera init-fel (t.ex. saknad fil) så appen startar ändå
     }
-  }
-
-  /// Null => följ systemet
-  Locale? materialLocale() => followingSystem ? null : (_locale ?? const Locale('en'));
-
-  Future<void> setLocale(Locale locale) async {
-    followingSystem = false;
-    _locale = locale;
-    final sp = await SharedPreferences.getInstance();
-    await sp.setString(_kLangCode, locale.languageCode.toLowerCase());
-    await sp.setBool(_kFollowSystem, false);
     notifyListeners();
   }
 
-  Future<void> followSystem() async {
-    followingSystem = true;
-    _locale = null;
+  Future<void> setEnabled(bool on) async {
+    _enabled = on;
     final sp = await SharedPreferences.getInstance();
-    await sp.setBool(_kFollowSystem, true);
-    await sp.remove(_kLangCode);
+    await sp.setBool(_kMusicEnabled, on);
+    if (on) {
+      await _player.play();
+    } else {
+      await _player.pause();
+    }
     notifyListeners();
   }
 
-  /// Språkkod som används för t()
-  String currentCode() {
-    if (!followingSystem && _locale != null) {
-      return _locale!.languageCode.toLowerCase();
-    }
-    final system = WidgetsBinding.instance.platformDispatcher.locale;
-    return system.languageCode.toLowerCase();
-  }
-
-  /// Minimal översättning: svenska / engelska
-  String tr(String sv, String en) => currentCode().startsWith('sv') ? sv : en;
+  Future<void> toggle() => setEnabled(!_enabled);
 }
-
-final lang = Lang();
-String t(String sv, String en) => lang.tr(sv, en);
