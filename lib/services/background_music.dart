@@ -8,6 +8,7 @@ class BackgroundMusic extends ChangeNotifier {
   BackgroundMusic._();
 
   static const _kMusicEnabled = 'music_enabled';
+  static const _assetPath = 'assets/audio/FloridaBirds.mp3';
 
   final AudioPlayer _player = AudioPlayer();
   bool _enabled = true;
@@ -19,29 +20,47 @@ class BackgroundMusic extends ChangeNotifier {
     _enabled = sp.getBool(_kMusicEnabled) ?? true;
 
     try {
-      await _player.setAudioSource(
-        AudioSource.asset('assets/audio/FloridaBirds.mp3'),
-      );
-      await _player.setLoopMode(LoopMode.one);
-      await _player.setVolume(0.6);
+      await _prepareIfNeeded();
       if (_enabled) {
         await _player.play();
       }
     } catch (_) {
-      // Ignorera init-fel (t.ex. saknad fil) så appen startar ändå
+      // Ignorera init-fel (t.ex. saknad fil) så appen startar ändå.
     }
     notifyListeners();
+  }
+
+  /// Säkerställ att spelaren har källa, loop och volym.
+  Future<void> _prepareIfNeeded() async {
+    if (_player.audioSource == null) {
+      await _player.setAudioSource(AudioSource.asset(_assetPath));
+      await _player.setLoopMode(LoopMode.one);
+      await _player.setVolume(0.6);
+    }
   }
 
   Future<void> setEnabled(bool on) async {
     _enabled = on;
     final sp = await SharedPreferences.getInstance();
     await sp.setBool(_kMusicEnabled, on);
-    if (on) {
-      await _player.play();
-    } else {
-      await _player.pause();
+
+    try {
+      if (on) {
+        // 🔧 Viktigt: se till att källa finns och hoppa till början innan play()
+        await _prepareIfNeeded();
+        try {
+          await _player.seek(Duration.zero);
+        } catch (_) {
+          // Om seek misslyckas, fortsätt ändå med play.
+        }
+        await _player.play();
+      } else {
+        await _player.pause();
+      }
+    } catch (_) {
+      // Tysta eventuella play/pause-fel
     }
+
     notifyListeners();
   }
 
