@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import '../../services/lang.dart' as i18n;
+import 'package:guess_the_heritage/services/lang.dart' as i18n;
 
-/// Språkval i topphörnet. Ingen visuell ändring.
-/// Markerar korrekt bock för System / Svenska / English.
+/// Popup-meny för språk. Visar ✅ på valt språk och uppdateras live.
+/// Kräver att `i18n.lang` är en ChangeNotifier med:
+/// - getter: current (AppLocale)
+/// - method: setOverride(AppLocale)
 class LanguageMenu extends StatelessWidget {
   const LanguageMenu({super.key});
 
@@ -13,34 +15,25 @@ class LanguageMenu extends StatelessWidget {
       builder: (context, _) {
         final current = i18n.lang.current;
 
-        return PopupMenuButton<int>(
+        return PopupMenuButton<i18n.AppLocale>(
           tooltip: i18n.t('Språk', 'Language'),
           icon: const Icon(Icons.language_rounded),
-          onSelected: (value) {
-            // 0=System, 1=sv, 2=en
-            if (value == 0) {
-              i18n.lang.setOverride(i18n.AppLocale.system);
-            } else if (value == 1) {
-              i18n.lang.setOverride(i18n.AppLocale.sv);
-            } else if (value == 2) {
-              i18n.lang.setOverride(i18n.AppLocale.en);
-            }
-          },
+          onSelected: (sel) => i18n.lang.setOverride(sel),
           itemBuilder: (context) => [
             _item(
-              text: i18n.t('Följ system', 'Follow system'),
+              value: i18n.AppLocale.system,
+              text: i18n.t('Systemspråk', 'System language'),
               selected: current == i18n.AppLocale.system,
-              value: 0,
             ),
             _item(
+              value: i18n.AppLocale.svSE,
               text: 'Svenska',
-              selected: current == i18n.AppLocale.sv,
-              value: 1,
+              selected: current == i18n.AppLocale.svSE,
             ),
             _item(
+              value: i18n.AppLocale.enUS,
               text: 'English',
-              selected: current == i18n.AppLocale.en,
-              value: 2,
+              selected: current == i18n.AppLocale.enUS,
             ),
           ],
         );
@@ -48,17 +41,16 @@ class LanguageMenu extends StatelessWidget {
     );
   }
 
-  PopupMenuItem<int> _item({
+  PopupMenuItem<i18n.AppLocale> _item({
+    required i18n.AppLocale value,
     required String text,
     required bool selected,
-    required int value,
   }) {
-    return PopupMenuItem<int>(
+    return PopupMenuItem<i18n.AppLocale>(
       value: value,
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(text),
+          Expanded(child: Text(text)),
           if (selected) const Icon(Icons.check, size: 18),
         ],
       ),
