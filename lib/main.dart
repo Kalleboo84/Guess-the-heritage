@@ -13,10 +13,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Viktigt: inte const MaterialApp (annars "invalid constant" om något inuti inte är helt const)
-    return MaterialApp(
+    // Enda ändringen: MaterialApp är nu const (ingen UI-förändring)
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const HomeScreen(),
+      home: HomeScreen(),
     );
   }
 }
