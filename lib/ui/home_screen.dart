@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-// Alias-importer för att undvika namn-krockar (lang/t vs musik)
-import '../services/background_music.dart' as music;
+// Viktigt: använd package-import så vi inte får två separata instanser av musiktjänsten.
+import 'package:guess_the_heritage/services/background_music.dart' as music;
 import '../services/lang.dart' as i18n;
 
 import 'game_screen.dart';
@@ -43,8 +43,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.all(16),
               child: Column(
                 children: [
-                  // Topp: Ljudknapp + Språkval (inte const, så LanguageMenu kan rebuildas)
-                  // ignore: prefer_const_constructors
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: const [
@@ -53,7 +51,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ],
                   ),
                   const Spacer(),
-                  // Titel
                   Text(
                     title,
                     textAlign: TextAlign.center,
@@ -64,7 +61,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ),
                   const SizedBox(height: 18),
-                  // Start-knapp
                   SizedBox(
                     width: 260,
                     height: 56,
@@ -90,8 +86,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    i18n.t('Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
-                        'Tip: You can change language and toggle music in the top corners.'),
+                    i18n.t(
+                      'Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
+                      'Tip: You can change language and toggle music in the top corners.',
+                    ),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -163,16 +161,15 @@ const _leafs = <_LeafSpec>[
   _LeafSpec(640, 180, 76, -0.9, 0.12),
 ];
 
-/// 🔊 Ljudknapp (på/av) — ingen UI-ändring
+/// 🔊 Ljudknapp (på/av) — etiketten följer alltid live-tillståndet.
 class _SoundToggle extends StatelessWidget {
   const _SoundToggle();
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: music.BackgroundMusic.instance,
-      builder: (_, __) {
-        final on = music.BackgroundMusic.instance.enabled;
+    return ValueListenableBuilder<bool>(
+      valueListenable: music.BackgroundMusic.instance.enabledNotifier,
+      builder: (_, on, __) {
         final label = on ? i18n.t('Ljud på', 'Sound on') : i18n.t('Ljud av', 'Sound off');
         final icon = on ? Icons.volume_up_rounded : Icons.volume_off_rounded;
 
