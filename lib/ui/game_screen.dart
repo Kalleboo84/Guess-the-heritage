@@ -39,39 +39,56 @@ class _GameScreenState extends State<GameScreen> {
 
   Future<void> _loadQuestions() async {
     try {
-      final jsonStr =
-          await rootBundle.loadString('assets/data/questions.json');
+      final jsonStr = await rootBundle.loadString('assets/data/questions.json');
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
       final items = data['questions'] as List<dynamic>;
+
+      // Bygg modell + SLUMPA ordning och svar
+      final rnd = Random();
       final qs = items
           .map((e) => _Question.fromJson(e as Map<String, dynamic>))
           .where((q) => q.choices.length == 4)
           .toList();
 
+      // Slumpa ordningen på frågorna
+      qs.shuffle(rnd);
+      // Slumpa svarsalternativens position för varje fråga
+      for (final q in qs) {
+        q.shuffleChoices(rnd);
+      }
+
       setState(() {
         _questions
           ..clear()
           ..addAll(qs);
+        _index = 0;
+        _correct = 0;
+        _wrong = 0;
+        _lifelines = 3;
+        _disabledChoiceIdx.clear();
+        _selectedIdx = null;
+        _answered = false;
       });
     } catch (e) {
-      // Om något går fel, visa ett minimalt fallback.
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(i18n.t('Kunde inte ladda frågor.', 'Failed to load questions.'))),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(i18n.t('Kunde inte ladda frågor.', 'Failed to load questions.'))),
+      );
     }
   }
 
   void _use5050() {
     if (_lifelines <= 0 || !_loaded) return;
-    // Ta bort två felaktiga alternativ slumpmässigt.
+
+    // Hitta index för rätt svar i den slumpade choices-listan
     final correctIdx = _q.choices.indexOf(_q.answer);
+
+    // Välj två felaktiga att dölja slumpmässigt
     final wrongs = <int>[0, 1, 2, 3]..remove(correctIdx);
     wrongs.shuffle(Random());
+
     setState(() {
       _lifelines -= 1;
-      // Inaktivera två första felaktiga
       _disabledChoiceIdx = wrongs.take(2).toSet();
     });
   }
@@ -95,7 +112,7 @@ class _GameScreenState extends State<GameScreen> {
     if (_wrong >= 3) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
-        Navigator.of(context).pop(); // Tillbaka till HomeScreen
+        Navigator.of(context).pop();
       });
       return;
     }
@@ -106,16 +123,16 @@ class _GameScreenState extends State<GameScreen> {
 
   void _nextQuestion() {
     if (!mounted) return;
+    // Gå vidare till nästa fråga, eller tillbaka till start om slut
+    if (_index + 1 >= _total) {
+      Navigator.of(context).pop();
+      return;
+    }
     setState(() {
       _answered = false;
       _selectedIdx = null;
       _disabledChoiceIdx.clear();
-
-      _index = (_index + 1).clamp(0, _total == 0 ? 0 : _total - 1);
-      // Om sista frågan var besvarad, börja om från 0 (eller navigera till resultatvy om du vill)
-      if (_index == _total - 1 && _answered == false) {
-        // Låt det fortsätta snurra; vill du avsluta på slutet kan du Navigera här.
-      }
+      _index += 1;
     });
   }
 
@@ -146,17 +163,16 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildGameBody() {
     // Progress "1/50" (ingen text "Question")
-    final progress = '${_index + 1}/${_total}';
+    final progress = '${_index + 1}/$_total';
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Rad: Progress i mitten, 50/50-livlina till höger
+        // Rad: Poäng | Progress | 50/50
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Row(
             children: [
-              // Poäng till vänster (valfritt men uppskattat)
               Text(
                 i18n.t('Poäng: $_correct', 'Score: $_correct'),
                 style: const TextStyle(fontWeight: FontWeight.w600),
@@ -231,7 +247,7 @@ class _GameScreenState extends State<GameScreen> {
 
         const SizedBox(height: 12),
 
-        // Svarsknappar
+        // Svarsknappar (positioner redan slumpade i _loadQuestions)
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -263,9 +279,7 @@ class _GameScreenState extends State<GameScreen> {
                       side: BorderSide(color: border),
                     ),
                   ),
-                  onPressed: isDisabled || _answered
-                      ? null
-                      : () => _onAnswerTap(idx),
+                  onPressed: isDisabled || _answered ? null : () => _onAnswerTap(idx),
                   child: Align(
                     alignment: Alignment.centerLeft,
                     child: Text(
@@ -324,14 +338,16 @@ class _FiftyButton extends StatelessWidget {
   }
 }
 
-/// Inre datamodell för frågan (endast vad vi använder här)
+/// Inre datamodell för frågan
 class _Question {
   final String question;
-  final List<String> choices;
   final String answer;
   final String? imageUrl;
   final String? attribution;
   final String? century;
+
+  // Denna lista slumpas per spelsession.
+  List<String> choices;
 
   _Question({
     required this.question,
@@ -352,5 +368,9 @@ class _Question {
       attribution: m['attribution'] as String?,
       century: m['century'] as String?,
     );
+  }
+
+  void shuffleChoices(Random rnd) {
+    choices.shuffle(rnd);
   }
 }
