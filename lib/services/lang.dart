@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+/// Enkel språkservice: SV/EN + "följ system"
 class Lang extends ChangeNotifier {
   static const _kLangCode = 'app_lang_code';
   static const _kFollowSystem = 'follow_system';
@@ -12,8 +13,8 @@ class Lang extends ChangeNotifier {
     final sp = await SharedPreferences.getInstance();
     followingSystem = sp.getBool(_kFollowSystem) ?? true;
     final savedCode = sp.getString(_kLangCode);
-    if (!followingSystem && savedCode != null) {
-      _locale = Locale(savedCode);
+    if (!followingSystem && savedCode != null && savedCode.isNotEmpty) {
+      _locale = Locale(savedCode.toLowerCase());
     }
   }
 
@@ -24,7 +25,7 @@ class Lang extends ChangeNotifier {
     followingSystem = false;
     _locale = locale;
     final sp = await SharedPreferences.getInstance();
-    await sp.setString(_kLangCode, locale.languageCode);
+    await sp.setString(_kLangCode, locale.languageCode.toLowerCase());
     await sp.setBool(_kFollowSystem, false);
     notifyListeners();
   }
@@ -44,10 +45,10 @@ class Lang extends ChangeNotifier {
       return _locale!.languageCode.toLowerCase();
     }
     final system = WidgetsBinding.instance.platformDispatcher.locale;
-    return (system.languageCode.toLowerCase());
+    return system.languageCode.toLowerCase();
   }
 
-  /// Enkel översättning: svenska / engelska
+  /// Minimal översättning: svenska / engelska
   String tr(String sv, String en) => currentCode().startsWith('sv') ? sv : en;
 }
 
