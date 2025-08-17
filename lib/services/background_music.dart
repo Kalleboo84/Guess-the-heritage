@@ -1,35 +1,56 @@
-import 'package:just_audio/just_audio.dart';
+import 'package:flutter/widgets.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-/// Enkel bakgrundsmusik som loopar FloridaBirds.mp3
-class BackgroundMusic {
-  BackgroundMusic._();
-  static final BackgroundMusic instance = BackgroundMusic._();
+/// Enkel språkservice: SV/EN + "följ system"
+class Lang extends ChangeNotifier {
+  static const _kLangCode = 'app_lang_code';
+  static const _kFollowSystem = 'follow_system';
 
-  final AudioPlayer _player = AudioPlayer();
-  bool _started = false;
+  bool followingSystem = true;
+  Locale? _locale; // null = följ systemet
 
-  Future<void> ensureStarted() async {
-    if (_started) return;
-    _started = true;
-    try {
-      await _player.setAudioSource(
-        AudioSource.asset('assets/audio/FloridaBirds.mp3'),
-      );
-      await _player.setLoopMode(LoopMode.one);
-      await _player.play();
-    } catch (_) {
-      // Ignorera ljudfel i produktion
+  Future<void> load() async {
+    final sp = await SharedPreferences.getInstance();
+    followingSystem = sp.getBool(_kFollowSystem) ?? true;
+    final savedCode = sp.getString(_kLangCode);
+    if (!followingSystem && savedCode != null && savedCode.isNotEmpty) {
+      _locale = Locale(savedCode.toLowerCase());
     }
   }
 
-  Future<void> stop() async {
-    try {
-      await _player.stop();
-    } catch (_) {}
-    _started = false;
+  /// Null => följ systemet
+  Locale? materialLocale() => followingSystem ? null : (_locale ?? const Locale('en'));
+
+  Future<void> setLocale(Locale locale) async {
+    followingSystem = false;
+    _locale = locale;
+    final sp = await SharedPreferences.getInstance();
+    await sp.setString(_kLangCode, locale.languageCode.toLowerCase());
+    await sp.setBool(_kFollowSystem, false);
+    notifyListeners();
   }
 
-  void dispose() {
-    _player.dispose();
+  Future<void> followSystem() async {
+    followingSystem = true;
+    _locale = null;
+    final sp = await SharedPreferences.getInstance();
+    await sp.setBool(_kFollowSystem, true);
+    await sp.remove(_kLangCode);
+    notifyListeners();
   }
+
+  /// Språkkod som används för t()
+  String currentCode() {
+    if (!followingSystem && _locale != null) {
+      return _locale!.languageCode.toLowerCase();
+    }
+    final system = WidgetsBinding.instance.platformDispatcher.locale;
+    return system.languageCode.toLowerCase();
+  }
+
+  /// Minimal översättning: svenska / engelska
+  String tr(String sv, String en) => currentCode().startsWith('sv') ? sv : en;
 }
+
+final lang = Lang();
+String t(String sv, String en) => lang.tr(sv, en);
