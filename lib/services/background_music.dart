@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Bakgrundsmusik med på/av + loop. Är en ChangeNotifier (har addListener/removeListener).
+/// Bakgrundsmusik: på/av + loop. Inga UI-ändringar.
 class BackgroundMusic extends ChangeNotifier {
   static final BackgroundMusic instance = BackgroundMusic._();
   BackgroundMusic._();
@@ -20,23 +20,33 @@ class BackgroundMusic extends ChangeNotifier {
     _enabled = sp.getBool(_kMusicEnabled) ?? true;
 
     try {
-      await _prepareIfNeeded();
+      // Första init – förbered och starta om aktiverad
+      await _ensurePrepared();
       if (_enabled) {
         await _player.play();
       }
     } catch (_) {
-      // Ignorera init-fel (t.ex. saknad fil) så appen startar ändå.
+      // Tysta init-fel så appen alltid startar
     }
     notifyListeners();
   }
 
-  /// Säkerställ att spelaren har källa, loop och volym.
-  Future<void> _prepareIfNeeded() async {
+  Future<void> _ensurePrepared() async {
     if (_player.audioSource == null) {
       await _player.setAudioSource(AudioSource.asset(_assetPath));
       await _player.setLoopMode(LoopMode.one);
       await _player.setVolume(0.6);
     }
+  }
+
+  Future<void> _startFresh() async {
+    // Säker nystart: stoppa, sätt källa, loop, volym, seek 0, spela
+    await _player.stop();
+    await _player.setAudioSource(AudioSource.asset(_assetPath));
+    await _player.setLoopMode(LoopMode.one);
+    await _player.setVolume(0.6);
+    await _player.seek(Duration.zero);
+    await _player.play();
   }
 
   Future<void> setEnabled(bool on) async {
@@ -46,19 +56,12 @@ class BackgroundMusic extends ChangeNotifier {
 
     try {
       if (on) {
-        // 🔧 Viktigt: se till att källa finns och hoppa till början innan play()
-        await _prepareIfNeeded();
-        try {
-          await _player.seek(Duration.zero);
-        } catch (_) {
-          // Om seek misslyckas, fortsätt ändå med play.
-        }
-        await _player.play();
+        await _startFresh();        // <— viktig fix
       } else {
         await _player.pause();
       }
     } catch (_) {
-      // Tysta eventuella play/pause-fel
+      // Ignorera enstaka fel från ljudstacken
     }
 
     notifyListeners();
