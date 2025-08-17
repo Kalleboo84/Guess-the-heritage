@@ -1,72 +1,58 @@
-import 'dart:ui' as ui;
 import 'package:flutter/foundation.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter/widgets.dart';
 
-/// Vilka lägen appens språk kan vara i.
-enum AppLocale { system, sv, en }
+/// Språkläge som kan väljas i appen.
+enum AppLocale {
+  system, // Följ enhetens språk
+  svSE,   // Svenska (Sverige)
+  enUS,   // Engelska (USA)
+}
 
-/// Enkel språktjänst som notifierar lyssnare vid ändring.
-/// Ingen UI-förändring – bara logik.
+/// Global språk-controller (lyssningsbar i UI via addListener)
 class Lang extends ChangeNotifier {
-  static const _kLang = 'app_locale_override';
+  AppLocale _current = AppLocale.system;
 
-  AppLocale _override = AppLocale.system;
+  AppLocale get current => _current;
 
-  /// Returnerar valt läge (system/sv/en).
-  AppLocale get current => _override;
-
-  /// (Valfritt) Ladda sparat val från disk.
-  Future<void> init() async {
-    try {
-      final sp = await SharedPreferences.getInstance();
-      final saved = sp.getString(_kLang);
-      if (saved != null) {
-        _override = AppLocale.values.firstWhere(
-          (e) => e.name == saved,
-          orElse: () => AppLocale.system,
-        );
-      }
-    } catch (_) {
-      // Ignorera fel – standard blir system.
-    }
-  }
-
-  /// Sätt nytt språkläge och spara.
-  Future<void> setOverride(AppLocale locale) async {
-    if (_override == locale) return;
-    _override = locale;
-    try {
-      final sp = await SharedPreferences.getInstance();
-      await sp.setString(_kLang, _override.name);
-    } catch (_) {
-      // Ignorera sparfel – påverkar ej körning.
-    }
+  /// Sätt manuellt språköverstyrning (uppdaterar lyssnare automatiskt).
+  void setOverride(AppLocale locale) {
+    if (_current == locale) return;
+    _current = locale;
     notifyListeners();
   }
 
-  bool get _systemIsSwedish {
-    final code =
-        ui.PlatformDispatcher.instance.locale.languageCode.toLowerCase();
-    return code.startsWith('sv');
+  /// Översättnings-hjälpare:
+  /// Används i UI som: i18n.t('Svenska texten', 'English text')
+  String t(String sv, String en) {
+    final code = _effectiveLocaleCode();
+    // Alla 'sv*' → svenska, annars engelska
+    if (code.startsWith('sv')) return sv;
+    return en;
   }
 
-  /// True om svenska ska väljas utifrån nuvarande läge.
-  bool get isSwedish {
-    switch (_override) {
-      case AppLocale.sv:
-        return true;
-      case AppLocale.en:
-        return false;
+  /// Tar fram effektiv språkkod enligt valt läge
+  String _effectiveLocaleCode() {
+    switch (_current) {
+      case AppLocale.svSE:
+        return 'sv_SE';
+      case AppLocale.enUS:
+        return 'en_US';
       case AppLocale.system:
-        return _systemIsSwedish;
+        final locales = WidgetsBinding.instance.platformDispatcher.locales;
+        if (locales.isNotEmpty) {
+          final l = locales.first;
+          final lang = l.languageCode; // t.ex. "sv" / "en"
+          final country = l.countryCode ?? ''; // t.ex. "SE" / "US"
+          return country.isNotEmpty ? '${lang}_$country' : lang;
+        }
+        // Fallback om inga locales rapporteras
+        return 'en_US';
     }
   }
-
-  /// Tvåsträngs-översättning: först SV, sen EN.
-  String t(String sv, String en) => isSwedish ? sv : en;
 }
 
-/// Global instans + hjälpfunktioner (som din kod redan använder).
+/// Global instans som resten av appen använder
 final Lang lang = Lang();
 
+/// Top-level hjälpfunktion så du kan skriva i18n.t('sv', 'en') var som helst.
 String t(String sv, String en) => lang.t(sv, en);
