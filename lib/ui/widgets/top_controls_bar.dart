@@ -4,18 +4,18 @@ import '../../services/lang.dart' as i18n;
 import 'language_menu.dart';
 
 /// Gemensam topprad: [Ljudknapp] .............. [Språk-meny]
-/// Används både på HomeScreen och GameScreen, utan visuella ändringar.
+/// Används både på HomeScreen och GameScreen.
 class TopControlsBar extends StatelessWidget {
   const TopControlsBar({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
+    return const SafeArea(
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: const [
+          children: [
             _SoundToggle(),
             LanguageMenu(),
           ],
