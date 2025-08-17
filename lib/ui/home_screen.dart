@@ -44,9 +44,9 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Column(
                 children: [
                   // Topp: Ljudknapp + Språkval
-                  Row(
+                  const Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
+                    children: [
                       _SoundToggle(),
                       LanguageMenu(),
                     ],
@@ -114,7 +114,7 @@ class _LeafBackground extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = [const Color(0xFFE8F5E9), const Color(0xFFFFFFFF)];
-    final leaves = _leafs;
+    const leaves = _leafs;
 
     return IgnorePointer(
       child: Container(
