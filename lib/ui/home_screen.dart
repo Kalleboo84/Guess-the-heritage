@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../services/lang.dart';
-import '../services/background_music.dart';
+// Alias-importer för att undvika namn-krockar (lang/t vs musik)
+import '../services/background_music.dart' as music;
+import '../services/lang.dart' as i18n;
+
 import 'game_screen.dart';
 import 'widgets/language_menu.dart';
 
@@ -15,21 +17,21 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    lang.addListener(_onChange);
-    BackgroundMusic.instance.addListener(_onChange);
+    i18n.lang.addListener(_onChange);
+    music.BackgroundMusic.instance.addListener(_onChange);
   }
 
   void _onChange() => setState(() {});
   @override
   void dispose() {
-    lang.removeListener(_onChange);
-    BackgroundMusic.instance.removeListener(_onChange);
+    i18n.lang.removeListener(_onChange);
+    music.BackgroundMusic.instance.removeListener(_onChange);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final title = t('Gissa kulturarvet', 'Guess the Heritage');
+    final title = i18n.t('Gissa kulturarvet', 'Guess the Heritage');
 
     return Scaffold(
       body: Stack(
@@ -80,15 +82,15 @@ class _HomeScreenState extends State<HomeScreen> {
                       },
                       icon: const Icon(Icons.play_arrow, size: 28),
                       label: Text(
-                        t('Starta spel', 'Start game'),
+                        i18n.t('Starta spel', 'Start game'),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
                       ),
                     ),
                   ),
                   const Spacer(),
                   Text(
-                    t('Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
-                      'Tip: You can change language and toggle music in the top corners.'),
+                    i18n.t('Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
+                        'Tip: You can change language and toggle music in the top corners.'),
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 13,
@@ -107,7 +109,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
 /// 🌿 Blad-bakgrund på mjuk gradient
 class _LeafBackground extends StatelessWidget {
-  const _LeafBackground({super.key});
+  const _LeafBackground();
 
   @override
   Widget build(BuildContext context) {
@@ -167,10 +169,10 @@ class _SoundToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedBuilder(
-      animation: BackgroundMusic.instance,
+      animation: music.BackgroundMusic.instance,
       builder: (_, __) {
-        final on = BackgroundMusic.instance.enabled;
-        final label = on ? t('Ljud på', 'Sound on') : t('Ljud av', 'Sound off');
+        final on = music.BackgroundMusic.instance.enabled;
+        final label = on ? i18n.t('Ljud på', 'Sound on') : i18n.t('Ljud av', 'Sound off');
         final icon = on ? Icons.volume_up_rounded : Icons.volume_off_rounded;
 
         return Material(
@@ -179,7 +181,7 @@ class _SoundToggle extends StatelessWidget {
           color: Colors.white,
           child: InkWell(
             customBorder: const StadiumBorder(),
-            onTap: () => BackgroundMusic.instance.toggle(),
+            onTap: () => music.BackgroundMusic.instance.toggle(),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               child: Row(
