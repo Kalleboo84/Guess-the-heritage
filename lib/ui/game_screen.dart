@@ -23,7 +23,6 @@ class _GameScreenState extends State<GameScreen> {
   int _lifelines = 3;
   Set<int> _disabledChoiceIdx = <int>{};
 
-  // Markering av valt svar (för att låsa mellan klick och nästa)
   int? _selectedIdx;
   bool _answered = false;
 
@@ -43,16 +42,14 @@ class _GameScreenState extends State<GameScreen> {
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
       final items = data['questions'] as List<dynamic>;
 
-      // Bygg modell + SLUMPA ordning och svar
       final rnd = Random();
       final qs = items
           .map((e) => _Question.fromJson(e as Map<String, dynamic>))
           .where((q) => q.choices.length == 4)
           .toList();
 
-      // Slumpa ordningen på frågorna
+      // Slumpa frågeordning + svarens placering
       qs.shuffle(rnd);
-      // Slumpa svarsalternativens position för varje fråga
       for (final q in qs) {
         q.shuffleChoices(rnd);
       }
@@ -69,7 +66,7 @@ class _GameScreenState extends State<GameScreen> {
         _selectedIdx = null;
         _answered = false;
       });
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(i18n.t('Kunde inte ladda frågor.', 'Failed to load questions.'))),
@@ -79,11 +76,7 @@ class _GameScreenState extends State<GameScreen> {
 
   void _use5050() {
     if (_lifelines <= 0 || !_loaded) return;
-
-    // Hitta index för rätt svar i den slumpade choices-listan
     final correctIdx = _q.choices.indexOf(_q.answer);
-
-    // Välj två felaktiga att dölja slumpmässigt
     final wrongs = <int>[0, 1, 2, 3]..remove(correctIdx);
     wrongs.shuffle(Random());
 
@@ -108,7 +101,6 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
-    // Avsluta efter 3 fel -> tillbaka till startsidan
     if (_wrong >= 3) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
@@ -117,13 +109,11 @@ class _GameScreenState extends State<GameScreen> {
       return;
     }
 
-    // Nästa fråga efter kort delay
     Future.delayed(const Duration(milliseconds: 600), _nextQuestion);
   }
 
   void _nextQuestion() {
     if (!mounted) return;
-    // Gå vidare till nästa fråga, eller tillbaka till start om slut
     if (_index + 1 >= _total) {
       Navigator.of(context).pop();
       return;
@@ -138,18 +128,26 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Progress "1/50"
+    final progress = '${_index + 1}/$_total';
+
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // 🔝 Samma toppkontroller (ljud + språk) som på startsidan
-          const TopControlsBar(),
+          // ✅ SPRÅK + LJUD: Absolut position överst
+          Positioned(
+            top: 8,
+            left: 0,
+            right: 0,
+            child: const TopControlsBar(),
+          ),
 
-          // Själva spelinnehållet – med luft under toppraden
+          // Innehåll under toppraden (lägger luft så att knapparna inte täcker)
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(top: 56.0),
-              child: _loaded ? _buildGameBody() : _buildLoading(),
+              child: _loaded ? _buildGameBody(progress) : _buildLoading(),
             ),
           ),
         ],
@@ -157,14 +155,9 @@ class _GameScreenState extends State<GameScreen> {
     );
   }
 
-  Widget _buildLoading() {
-    return const Center(child: CircularProgressIndicator());
-  }
+  Widget _buildLoading() => const Center(child: CircularProgressIndicator());
 
-  Widget _buildGameBody() {
-    // Progress "1/50" (ingen text "Question")
-    final progress = '${_index + 1}/$_total';
-
+  Widget _buildGameBody(String progress) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -180,10 +173,7 @@ class _GameScreenState extends State<GameScreen> {
               const Spacer(),
               Text(
                 progress,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
               ),
               const Spacer(),
               _FiftyButton(
@@ -196,7 +186,7 @@ class _GameScreenState extends State<GameScreen> {
 
         const SizedBox(height: 8),
 
-        // Bild
+        // Bild med rundade hörn
         if (_q.imageUrl != null && _q.imageUrl!.isNotEmpty)
           AspectRatio(
             aspectRatio: 16 / 9,
@@ -233,21 +223,18 @@ class _GameScreenState extends State<GameScreen> {
 
         const SizedBox(height: 12),
 
-        // Frågetext
+        // Fråga
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: Text(
             _q.question,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-            ),
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
           ),
         ),
 
         const SizedBox(height: 12),
 
-        // Svarsknappar (positioner redan slumpade i _loadQuestions)
+        // Svar
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -293,17 +280,14 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
 
-        // Attribution (om finns)
+        // Attribution
         if (_q.attribution != null && _q.attribution!.isNotEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
             child: Text(
               _q.attribution!,
               textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.black.withOpacity(0.6),
-              ),
+              style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.6)),
             ),
           ),
       ],
@@ -311,7 +295,7 @@ class _GameScreenState extends State<GameScreen> {
   }
 }
 
-/// 50/50-knapp med räknare (3 → 2 → 1 → 0)
+/// 50/50-knapp med räknare
 class _FiftyButton extends StatelessWidget {
   final int remaining;
   final VoidCallback? onPressed;
@@ -324,7 +308,6 @@ class _FiftyButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final label = '${i18n.t('Livlina 50/50', 'Lifeline 50/50')} ($remaining)';
-
     return ElevatedButton.icon(
       onPressed: onPressed,
       icon: const Icon(Icons.help_outline_rounded),
@@ -338,15 +321,12 @@ class _FiftyButton extends StatelessWidget {
   }
 }
 
-/// Inre datamodell för frågan
 class _Question {
   final String question;
   final String answer;
   final String? imageUrl;
   final String? attribution;
   final String? century;
-
-  // Denna lista slumpas per spelsession.
   List<String> choices;
 
   _Question({
