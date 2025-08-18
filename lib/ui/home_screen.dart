@@ -15,15 +15,17 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    i18n.lang.addListener(_onChange);
-    music.BackgroundMusic.instance.addListener(_onChange);
+    // Starta bakgrundsmusiken (loop) om påslagen.
+    music.BackgroundMusic.instance.ensureStarted();
+
+    // Lyssna på språkbyte så texter uppdateras.
+    i18n.lang.addListener(_onLangChange);
   }
 
-  void _onChange() => setState(() {});
+  void _onLangChange() => setState(() {});
   @override
   void dispose() {
-    i18n.lang.removeListener(_onChange);
-    music.BackgroundMusic.instance.removeListener(_onChange);
+    i18n.lang.removeListener(_onLangChange);
     super.dispose();
   }
 
@@ -35,14 +37,22 @@ class _HomeScreenState extends State<HomeScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const _LeafBackground(),          // 🌿 bladbakgrund
-          const TopControlsBar(),           // 🔝 ljud + språk (samma som i spelet)
+          const _LeafBackground(), // 🌿 diskret bladbakgrund
+
+          // ✅ Språk- & ljudknappar alltid pinnade högst upp
+          const Positioned(
+            top: 8,
+            left: 0,
+            right: 0,
+            child: TopControlsBar(),
+          ),
+
+          // Innehåll – lägg lite luft under toppraden
           SafeArea(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.only(top: 56.0),
               child: Column(
                 children: [
-                  const SizedBox(height: 56), // luft under toppraden
                   const Spacer(),
                   Text(
                     title,
@@ -73,22 +83,29 @@ class _HomeScreenState extends State<HomeScreen> {
                       icon: const Icon(Icons.play_arrow, size: 28),
                       label: Text(
                         i18n.t('Starta spel', 'Start game'),
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ),
                   const Spacer(),
-                  Text(
-                    i18n.t(
-                      'Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
-                      'Tip: You can change language and toggle music in the top corners.',
-                    ),
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.black.withOpacity(0.7),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      i18n.t(
+                        'Tips: Du kan byta språk och stänga av/på musik uppe i hörnen.',
+                        'Tip: You can change language and toggle music in the top corners.',
+                      ),
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.black.withOpacity(0.7),
+                      ),
                     ),
                   ),
+                  const SizedBox(height: 16),
                 ],
               ),
             ),
@@ -99,7 +116,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 }
 
-/// 🌿 Blad-bakgrund (diskret)
+/// 🌿 Blad-bakgrund (diskret, samma som tidigare)
 class _LeafBackground extends StatelessWidget {
   const _LeafBackground();
 
