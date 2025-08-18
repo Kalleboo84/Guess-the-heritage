@@ -136,11 +136,11 @@ class _GameScreenState extends State<GameScreen> {
         fit: StackFit.expand,
         children: [
           // ✅ SPRÅK + LJUD: Absolut position överst
-          Positioned(
+          const Positioned(
             top: 8,
             left: 0,
             right: 0,
-            child: const TopControlsBar(),
+            child: TopControlsBar(),
           ),
 
           // Innehåll under toppraden (lägger luft så att knapparna inte täcker)
