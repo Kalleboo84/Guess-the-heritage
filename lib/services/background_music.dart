@@ -1,56 +1,103 @@
-import 'package:flutter/foundation.dart';
+import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 
-/// Enkel bakgrundsmusik-kontroller med toggle och loop.
-/// Används via: BackgroundMusic.instance
+/// Enkel bakgrundsmusik med mjuk fade-in/fade-out och preloading.
+/// - Startar automatiskt om [enabled] är true.
+/// - Pausar (stoppar inte) vid avstängning för att undvika knaster.
+/// - Inga UI-beroenden; endast ChangeNotifier för att knappen kan lyssna på state.
 class BackgroundMusic extends ChangeNotifier {
-  BackgroundMusic._();
-  static final BackgroundMusic instance = BackgroundMusic._();
+  BackgroundMusic() {
+    _init(); // laddar och startar (om enabled=true)
+  }
 
   final AudioPlayer _player = AudioPlayer();
-  final ValueNotifier<bool> enabledNotifier = ValueNotifier<bool>(true);
+  bool _inited = false;
+  bool _busy = false; // skyddar mot dubbelklick/glitch
+  bool _enabled = true; // starta musik ON som default
 
-  bool _initialized = false;
+  bool get enabled => _enabled;
 
-  bool get enabled => enabledNotifier.value;
+  /// Justera om du vill annan grundvolym.
+  static const double _targetVolume = 0.6;
+  static const Duration _fadeDur = Duration(milliseconds: 500);
 
-  /// Starta musiken exakt en gång (loopar tills man stänger av).
-  Future<void> ensureStarted() async {
-    if (_initialized) return;
-    _initialized = true;
+  Future<void> _init() async {
+    if (_inited) return;
     try {
-      // Din fil: assets/audio/FloridaBirds.mp3 (läggs i pubspec.yaml)
-      await _player.setAudioSource(
-        AudioSource.asset('assets/audio/FloridaBirds.mp3'),
-      );
+      // Ladda källan i förväg (minskar start-hack/knaster)
+      await _player.setAsset('assets/audio/FloridaBirds.mp3');
       await _player.setLoopMode(LoopMode.one);
-      if (enabledNotifier.value) {
+      await _player.setVolume(0.0);
+
+      _inited = true;
+
+      if (_enabled) {
+        // Vänta en tick så decodern är redo, sen mjuk fade-in
         await _player.play();
+        await _fadeTo(_targetVolume, _fadeDur);
       }
     } catch (e) {
-      // Tysta fel i release; ev. logga i debug om du vill.
+      // Tyst fel – vi vill inte krascha spelet om ljudet saknas.
+      debugPrint('BackgroundMusic init error: $e');
     }
   }
 
-  /// Slå av/på musiken.
+  /// Växla på/av. Mjuk fade vid båda lägena.
   Future<void> toggle() async {
-    final next = !enabledNotifier.value;
-    enabledNotifier.value = next;
-    notifyListeners(); // om någon lyssnar på instansen
+    if (_busy) return;
+    _busy = true;
+    try {
+      if (_enabled) {
+        await _fadeTo(0.0, _fadeDur);
+        await _player.pause(); // behåll buffern -> mindre knaster vid nästa start
+        _enabled = false;
+        notifyListeners();
+      } else {
+        await _init();
+        // säkerställ att vi är laddade och i startläge
+        if (_player.playing == false) {
+          await _player.play();
+        }
+        await _fadeTo(_targetVolume, _fadeDur);
+        _enabled = true;
+        notifyListeners();
+      }
+    } finally {
+      _busy = false;
+    }
+  }
 
-    if (next) {
-      try {
-        await _player.play();
-      } catch (_) {}
-    } else {
-      await _player.pause();
+  /// För säkerhets skull om du vill explicit slå på/av utan att veta läget.
+  Future<void> setEnabled(bool value) async {
+    if (value == _enabled) return;
+    await toggle();
+  }
+
+  /// Mjuk volymramp utan externa paket.
+  Future<void> _fadeTo(double target, Duration dur) async {
+    try {
+      final current = _player.volume;
+      final steps = 15;
+      final stepDur = dur.inMilliseconds ~/ steps;
+      final delta = (target - current) / steps;
+
+      for (int i = 1; i <= steps; i++) {
+        await _player.setVolume((current + delta * i).clamp(0.0, 1.0));
+        await Future.delayed(Duration(milliseconds: stepDur));
+      }
+    } catch (e) {
+      // Om något går fel, försök bara sätta slutvolymen direkt.
+      await _player.setVolume(target);
     }
   }
 
   @override
   void dispose() {
     _player.dispose();
-    enabledNotifier.dispose();
     super.dispose();
   }
 }
+
+/// Valfritt: en global instans om din UI använder en singleton.
+final backgroundMusic = BackgroundMusic();
