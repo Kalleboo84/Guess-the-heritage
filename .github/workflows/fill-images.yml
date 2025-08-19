@@ -23,11 +23,45 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps
-        run: pip install requests
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: python-${{ runner.os }}-${{ hashFiles('scripts/requirements.txt') }}
+          restore-keys: |
+            python-${{ runner.os }}-
+
+      - name: Install Python dependencies
+        run: |
+          pip install requests tqdm
+          # Install dependencies for scripts if requirements.txt exists
+          if [ -f scripts/requirements.txt ]; then
+            pip install -r scripts/requirements.txt
+          fi
+
+      - name: Validate input files
+        run: |
+          if [ ! -f assets/data/questions.json ]; then
+            echo "Error: assets/data/questions.json not found"
+            exit 1
+          fi
+          echo "✅ Input file validated"
 
       - name: Run filler
-        run: python tool/fill_commons_images.py
+        run: |
+          echo "Running fill_commons_images.py..."
+          python tool/fill_commons_images.py
+          echo "✅ Image filling completed"
+
+      - name: Validate output
+        run: |
+          echo "Checking for changes in questions.json..."
+          if git diff --quiet assets/data/questions.json; then
+            echo "ℹ️  No changes made to questions.json"
+          else
+            echo "✅ Changes detected in questions.json"
+            git diff --stat assets/data/questions.json
+          fi
 
       # Pusha tillbaka ändrad questions.json
       - name: Auto-commit changes

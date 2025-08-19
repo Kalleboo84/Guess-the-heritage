@@ -17,7 +17,8 @@ QFILE = "assets/data/questions.json"
 HEADERS = {"User-Agent": "GuessHeritageBot/1.1 (contact: you@example.com)"}
 
 # Ställ till True EN gång om du vill korrigera alla (även de som redan har imageUrl)
-OVERWRITE_ALL = True
+# Can be overridden by environment variable
+OVERWRITE_ALL = os.environ.get('OVERWRITE_ALL', 'False').lower() in ('true', '1', 'yes')
 
 # Snabb override för kända tvetydigheter: "svarstext" (exakt) -> QID
 OVERRIDE = {

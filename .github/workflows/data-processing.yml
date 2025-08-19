@@ -1,0 +1,107 @@
+name: Data Processing API
+
+on:
+  workflow_dispatch:
+    inputs:
+      script_choice:
+        description: 'Which script to run'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+        - 'both'
+        - 'fill_commons_metadata'
+        - 'fill_commons_images'
+      overwrite:
+        description: 'Overwrite existing data'
+        required: false
+        default: 'false'
+        type: boolean
+
+permissions:
+  contents: write
+
+jobs:
+  process_data:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Cache Python dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: python-${{ runner.os }}-${{ hashFiles('scripts/requirements.txt') }}
+          restore-keys: |
+            python-${{ runner.os }}-
+
+      - name: Install Python dependencies
+        run: |
+          pip install --upgrade pip
+          pip install requests tqdm
+          # Install dependencies from requirements.txt if it exists
+          if [ -f scripts/requirements.txt ]; then
+            pip install -r scripts/requirements.txt
+          fi
+
+      - name: Validate input files
+        run: |
+          if [ ! -f assets/data/questions.json ]; then
+            echo "Error: assets/data/questions.json not found"
+            exit 1
+          fi
+          echo "✅ Input files validated"
+
+      - name: Run fill_commons_metadata.py
+        if: ${{ github.event.inputs.script_choice == 'fill_commons_metadata' || github.event.inputs.script_choice == 'both' }}
+        run: |
+          echo "Running fill_commons_metadata.py..."
+          python scripts/fill_commons_metadata.py \
+            --in assets/data/questions.json \
+            --out assets/data/questions.filled.json \
+            --strategy answer \
+            --field century \
+            --limit 50
+
+      - name: Run fill_commons_images.py
+        if: ${{ github.event.inputs.script_choice == 'fill_commons_images' || github.event.inputs.script_choice == 'both' }}
+        run: |
+          echo "Running fill_commons_images.py..."
+          # Set overwrite flag if requested
+          if [ "${{ github.event.inputs.overwrite }}" = "true" ]; then
+            export OVERWRITE_ALL=True
+          fi
+          python tool/fill_commons_images.py
+
+      - name: Validate output
+        run: |
+          echo "Validating output files..."
+          if [ -f assets/data/questions.filled.json ]; then
+            echo "✅ questions.filled.json created"
+            wc -l assets/data/questions.filled.json
+          fi
+          if [ -f assets/data/questions.json ]; then
+            echo "✅ questions.json exists"
+            wc -l assets/data/questions.json
+          fi
+
+      - name: Auto-commit changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore(data): update Commons images and metadata via API"
+          file_pattern: |
+            assets/data/questions.json
+            assets/data/questions.filled.json
+          branch: ${{ github.ref_name }}
