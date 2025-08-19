@@ -72,10 +72,11 @@ jobs:
           fi
 
       - name: Commit pubspec fix (if changed)
+        if: github.event_name != 'pull_request'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(pubspec): set name to guess_the_heritage"
-          branch: main
+          branch: ${{ github.ref_name }}
           file_pattern: pubspec.yaml
 
       - name: flutter pub get
@@ -88,10 +89,11 @@ jobs:
           echo "✅ flutter create completed."
 
       - name: Commit recreated android/ (if changed)
+        if: github.event_name != 'pull_request'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(android): recreate/upgrade to v2 embedding (forced project name)"
-          branch: main
+          branch: ${{ github.ref_name }}
           file_pattern: |
             android/**
             .metadata

@@ -3,6 +3,7 @@ name: Generate launcher icons
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
     paths:
       - "pubspec.yaml"
       - "assets/icons/**"
@@ -14,6 +15,8 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # Skip if the commit was made by GitHub Actions to prevent infinite loops
+    if: github.actor != 'github-actions[bot]' && github.actor != 'dependabot[bot]'
 
     steps:
       - name: Checkout
@@ -44,7 +47,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(icons): generate launcher icons"
-          branch: main
+          branch: ${{ github.ref_name }}
           file_pattern: |
             android/app/src/main/res/**
             pubspec.lock
