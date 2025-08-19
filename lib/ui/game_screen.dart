@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 
 import '../services/lang.dart' as i18n;
 import 'widgets/top_controls_bar.dart';
+import 'result_screen.dart';
 
 class GameScreen extends StatefulWidget {
   const GameScreen({super.key});
@@ -101,23 +102,36 @@ class _GameScreenState extends State<GameScreen> {
       }
     });
 
+    // Avsluta direkt vid 3 fel -> resultatskärm
     if (_wrong >= 3) {
       Future.delayed(const Duration(milliseconds: 600), () {
         if (!mounted) return;
-        Navigator.of(context).pop();
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ResultScreen(correct: _correct, wrong: _wrong, total: _total),
+          ),
+        );
       });
       return;
     }
 
-    Future.delayed(const Duration(milliseconds: 600), _nextQuestion);
+    // Gå vidare efter kort paus, eller visa resultat om sista frågan var besvarad
+    Future.delayed(const Duration(milliseconds: 600), () {
+      if (!mounted) return;
+      if (_index + 1 >= _total) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => ResultScreen(correct: _correct, wrong: _wrong, total: _total),
+          ),
+        );
+      } else {
+        _nextQuestion();
+      }
+    });
   }
 
   void _nextQuestion() {
     if (!mounted) return;
-    if (_index + 1 >= _total) {
-      Navigator.of(context).pop();
-      return;
-    }
     setState(() {
       _answered = false;
       _selectedIdx = null;
@@ -128,14 +142,13 @@ class _GameScreenState extends State<GameScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Progress "1/50"
     final progress = '${_index + 1}/$_total';
 
     return Scaffold(
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ✅ SPRÅK + LJUD: Absolut position överst
+          // ✅ Språk + Ljud alltid överst
           const Positioned(
             top: 8,
             left: 0,
@@ -143,7 +156,7 @@ class _GameScreenState extends State<GameScreen> {
             child: TopControlsBar(),
           ),
 
-          // Innehåll under toppraden (lägger luft så att knapparna inte täcker)
+          // Innehåll under toppraden
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(top: 56.0),
@@ -158,6 +171,8 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildLoading() => const Center(child: CircularProgressIndicator());
 
   Widget _buildGameBody(String progress) {
+    final mistakesLeft = max(0, 3 - _wrong);
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -186,7 +201,7 @@ class _GameScreenState extends State<GameScreen> {
 
         const SizedBox(height: 8),
 
-        // Bild med rundade hörn
+        // Bild
         if (_q.imageUrl != null && _q.imageUrl!.isNotEmpty)
           AspectRatio(
             aspectRatio: 16 / 9,
@@ -232,9 +247,31 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
 
-        const SizedBox(height: 12),
+        // 🔔 “Tavla” som visar rätt svar + århundrade efter att man svarat
+        if (_answered)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+            child: Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blueGrey.withOpacity(0.06),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.blueGrey.withOpacity(0.25)),
+              ),
+              child: Text(
+                [
+                  '${i18n.t('Rätt svar:', 'Correct answer:')} ${_q.answer}',
+                  if (_q.century != null && _q.century!.isNotEmpty)
+                    '${i18n.t('Århundrade:', 'Century:')} ${_q.century}',
+                ].join('\n'),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
 
-        // Svar
+        const SizedBox(height: 8),
+
+        // Svarsalternativ
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -283,13 +320,23 @@ class _GameScreenState extends State<GameScreen> {
         // Attribution
         if (_q.attribution != null && _q.attribution!.isNotEmpty)
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
             child: Text(
               _q.attribution!,
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 12, color: Colors.black.withOpacity(0.6)),
             ),
           ),
+
+        // ✅ “Fel kvar” längst ned
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+          child: Text(
+            i18n.t('Fel kvar: $mistakesLeft', 'Mistakes left: $mistakesLeft'),
+            textAlign: TextAlign.center,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+          ),
+        ),
       ],
     );
   }
