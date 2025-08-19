@@ -3,13 +3,19 @@ import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 
 /// Enkel bakgrundsmusik med mjuk fade-in/fade-out och preloading.
+/// - Singleton via [BackgroundMusic.instance] (och factory-konstruktorn).
 /// - Startar automatiskt om [enabled] är true.
 /// - Pausar (stoppar inte) vid avstängning för att undvika knaster.
-/// - Inga UI-beroenden; endast ChangeNotifier för att knappen kan lyssna på state.
+/// - Debounce skyddar mot snabba upprepade klick.
+/// OBS: Ingen UI-ändring – endast intern logik.
 class BackgroundMusic extends ChangeNotifier {
-  BackgroundMusic() {
-    _init(); // laddar och startar (om enabled=true)
+  // ---- Singleton ----
+  BackgroundMusic._internal() {
+    _init();
   }
+  static final BackgroundMusic _instance = BackgroundMusic._internal();
+  factory BackgroundMusic() => _instance;
+  static BackgroundMusic get instance => _instance;
 
   final AudioPlayer _player = AudioPlayer();
   bool _inited = false;
@@ -18,7 +24,6 @@ class BackgroundMusic extends ChangeNotifier {
 
   bool get enabled => _enabled;
 
-  /// Justera om du vill annan grundvolym.
   static const double _targetVolume = 0.6;
   static const Duration _fadeDur = Duration(milliseconds: 500);
 
@@ -55,7 +60,6 @@ class BackgroundMusic extends ChangeNotifier {
         notifyListeners();
       } else {
         await _init();
-        // säkerställ att vi är laddade och i startläge
         if (_player.playing == false) {
           await _player.play();
         }
@@ -78,7 +82,7 @@ class BackgroundMusic extends ChangeNotifier {
   Future<void> _fadeTo(double target, Duration dur) async {
     try {
       final current = _player.volume;
-      final steps = 15;
+      const int steps = 15; // lint: const istället för final
       final stepDur = dur.inMilliseconds ~/ steps;
       final delta = (target - current) / steps;
 
@@ -99,5 +103,6 @@ class BackgroundMusic extends ChangeNotifier {
   }
 }
 
-/// Valfritt: en global instans om din UI använder en singleton.
-final backgroundMusic = BackgroundMusic();
+/// Legacy/global åtkomst om något fortfarande importerar den.
+/// Pekar på samma singleton.
+final backgroundMusic = BackgroundMusic.instance;
