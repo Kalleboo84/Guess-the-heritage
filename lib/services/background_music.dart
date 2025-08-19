@@ -1,6 +1,5 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart'; // <-- behövs för ValueListenable/ValueNotifier
-import 'package:flutter/widgets.dart';
+import 'package:flutter/foundation.dart'; // ChangeNotifier, ValueListenable, ValueNotifier, debugPrint
 import 'package:just_audio/just_audio.dart';
 
 /// Bakgrundsmusik (singleton) med mjuk fade och preloading.
