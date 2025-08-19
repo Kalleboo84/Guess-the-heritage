@@ -183,7 +183,6 @@ class _GameScreenState extends State<GameScreen> {
   Widget _buildLoading() => const Center(child: CircularProgressIndicator());
 
   Widget _buildGameBody(String progress) {
-    final mistakesLeft = max(0, 3 - _wrong);
     final canUse5050 =
         _lifelines > 0 && !_used5050ThisQuestion && !_answered && _loaded;
 
