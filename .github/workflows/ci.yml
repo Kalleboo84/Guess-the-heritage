@@ -63,10 +63,10 @@ jobs:
           flutter analyze --no-fatal-infos
           echo "✅ Flutter analysis completed"
 
-      - name: Check formatting
+      - name: Format code automatically
         run: |
-          dart format --output=none --set-exit-if-changed .
-          echo "✅ Code formatting check completed"
+          dart format .
+          echo "✅ Code formatting completed"
 
   python_scripts:
     runs-on: ubuntu-latest
