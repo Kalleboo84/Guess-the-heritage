@@ -13,19 +13,19 @@
       "attribution": "Yann; edited by Jim Carter — CC BY-SA 4.0 (via Wikimedia Commons)",
       "century": "1600-talet"
     },
-    {
-      "question": "Vilket antikt tempel ser du på bilden i Aten?",
-      "choices": [
-        "Parthenon",
-        "Pantheon",
-        "Erechtheion",
-        "Zeus tempel i Olympia"
-      ],
-      "answer": "Parthenon",
-      "imageUrl": "https://commons.wikimedia.org/wiki/Parthenon#/media/File:The_Parthenon_in_Athens.jpg",
-      "attribution": "Terryburton at English Wikipedia — Public domain (via Wikimedia Commons)",
-      "century": "400-talet f.Kr."
-    },
+  {
+  "question": "Vilket antikt tempel ser du på bilden i Aten?",
+  "choices": [
+    "Parthenon",
+    "Pantheon",
+    "Erechtheion",
+    "Zeus tempel i Olympia"
+  ],
+  "answer": "Parthenon",
+  "imageUrl": "https://upload.wikimedia.org/wikipedia/commons/d/da/The_Parthenon_in_Athens.jpg",
+  "attribution": "Steve Swayne — CC BY 2.0 (via Wikimedia Commons)",
+  "century": "400-talet f.Kr."
+},
     {
       "question": "Vilken mur slingrar sig över norra Kina?",
       "choices": [
