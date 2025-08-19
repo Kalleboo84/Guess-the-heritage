@@ -68,16 +68,7 @@ jobs:
         if: ${{ github.event.inputs.generate_icons != 'false' }}
         run: flutter pub run flutter_launcher_icons
 
-      - name: Build debug APK
-        run: flutter build apk --debug
-
-      - name: Upload debug APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-debug
-          path: build/app/outputs/flutter-apk/app-debug.apk
-
-      - name: Build release APK
+      - name: Build APK
         run: flutter build apk --release
 
       - name: Upload release APK

@@ -65,7 +65,7 @@ jobs:
 
       - name: Check formatting
         run: |
-          dart format --dry-run --set-exit-if-changed .
+          dart format --output=none --set-exit-if-changed .
           echo "✅ Code formatting check completed"
 
   python_scripts:
