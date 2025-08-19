@@ -101,33 +101,20 @@ class _GameScreenState extends State<GameScreen> {
         _wrong++;
       }
     });
+    // ⛔ Inget auto-advance längre. Vid _answered måste användaren trycka för att gå vidare.
+  }
 
-    // Avsluta direkt vid 3 fel -> resultatskärm
-    if (_wrong >= 3) {
-      Future.delayed(const Duration(milliseconds: 600), () {
-        if (!mounted) return;
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => ResultScreen(correct: _correct, wrong: _wrong, total: _total),
-          ),
-        );
-      });
-      return;
+  void _advanceOrFinish() {
+    if (!_answered) return;
+    if (_wrong >= 3 || _index + 1 >= _total) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ResultScreen(correct: _correct, wrong: _wrong, total: _total),
+        ),
+      );
+    } else {
+      _nextQuestion();
     }
-
-    // Gå vidare efter kort paus, eller visa resultat om sista frågan var besvarad
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (!mounted) return;
-      if (_index + 1 >= _total) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(
-            builder: (_) => ResultScreen(correct: _correct, wrong: _wrong, total: _total),
-          ),
-        );
-      } else {
-        _nextQuestion();
-      }
-    });
   }
 
   void _nextQuestion() {
@@ -160,7 +147,14 @@ class _GameScreenState extends State<GameScreen> {
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.only(top: 56.0),
-              child: _loaded ? _buildGameBody(progress) : _buildLoading(),
+              child: _loaded
+                  // Osynlig tapp-yta som bara är aktiv när ett svar är valt
+                  ? GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _answered ? _advanceOrFinish : null,
+                      child: _buildGameBody(progress),
+                    )
+                  : _buildLoading(),
             ),
           ),
         ],
@@ -247,7 +241,7 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
 
-        // 🔔 “Tavla” som visar rätt svar + århundrade efter att man svarat
+        // 🔔 “Tavla” som visar rätt svar + århundrade efter att man svarat.
         if (_answered)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
