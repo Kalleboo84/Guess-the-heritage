@@ -274,3 +274,6 @@ Temporary Items
 # config/local/
 # data/cache/
 # temp/
+scripts/__pycache__/
+tool/__pycache__/
+**/__pycache__/

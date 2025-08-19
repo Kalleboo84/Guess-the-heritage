@@ -3,6 +3,7 @@ name: Generate launcher icons
 on:
   workflow_dispatch:
   push:
+    branches: [ main ]
     paths:
       - "pubspec.yaml"
       - "assets/icons/**"
@@ -14,15 +15,27 @@ permissions:
 jobs:
   generate:
     runs-on: ubuntu-latest
+    # Skip if the commit was made by GitHub Actions to prevent infinite loops
+    if: github.actor != 'github-actions[bot]' && github.actor != 'dependabot[bot]'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Cache Flutter dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.pub-cache
+            ${{ github.workspace }}/.dart_tool
+          key: flutter-${{ runner.os }}-${{ hashFiles('**/pubspec.lock') }}
+          restore-keys: |
+            flutter-${{ runner.os }}-
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: "3.22.2"   # eller "stable"
+          flutter-version: "3.24.3"   # Updated for consistency
 
       - name: Install dependencies
         run: flutter pub get
@@ -34,7 +47,7 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "chore(icons): generate launcher icons"
-          branch: main
+          branch: ${{ github.ref_name }}
           file_pattern: |
             android/app/src/main/res/**
             pubspec.lock
