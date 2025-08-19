@@ -23,7 +23,7 @@ class _GameScreenState extends State<GameScreen> {
   // 50/50
   int _lifelines = 3;
   Set<int> _disabledChoiceIdx = <int>{};
-  bool _used5050ThisQuestion = false; // ✅ NY: får bara användas en gång per fråga
+  bool _used5050ThisQuestion = false;
 
   int? _selectedIdx;
   bool _answered = false;
@@ -44,22 +44,36 @@ class _GameScreenState extends State<GameScreen> {
       final data = jsonDecode(jsonStr) as Map<String, dynamic>;
       final items = data['questions'] as List<dynamic>;
 
-      final rnd = Random();
-      final qs = items
+      // 1) Mappa till modell och filtrera bort ifall choices != 4
+      final all = items
           .map((e) => _Question.fromJson(e as Map<String, dynamic>))
           .where((q) => q.choices.length == 4)
           .toList();
 
-      // Slumpa frågeordning + svarens placering
-      qs.shuffle(rnd);
-      for (final q in qs) {
+      // 2) DEDUP: bara en post per exakt frågetext
+      final seen = <String>{};
+      final uniq = <_Question>[];
+      for (final q in all) {
+        if (seen.add(q.question)) {
+          uniq.add(q);
+        }
+      }
+
+      // 3) Slumpa ordning, ta max 50
+      final rnd = Random();
+      uniq.shuffle(rnd);
+      final takeN = min(50, uniq.length);
+      final selected = uniq.take(takeN).toList();
+
+      // 4) Slumpa svarsalternativ per fråga
+      for (final q in selected) {
         q.shuffleChoices(rnd);
       }
 
       setState(() {
         _questions
           ..clear()
-          ..addAll(qs);
+          ..addAll(selected);
         _index = 0;
         _correct = 0;
         _wrong = 0;
@@ -78,7 +92,6 @@ class _GameScreenState extends State<GameScreen> {
   }
 
   void _use5050() {
-    // ✅ spärr: kan inte använda om inga livlinor kvar, redan använt denna fråga, eller efter svar
     if (_lifelines <= 0 || !_loaded || _used5050ThisQuestion || _answered) return;
 
     final correctIdx = _q.choices.indexOf(_q.answer);
@@ -87,7 +100,7 @@ class _GameScreenState extends State<GameScreen> {
 
     setState(() {
       _lifelines -= 1;
-      _used5050ThisQuestion = true; // ✅ markera som använd denna fråga
+      _used5050ThisQuestion = true;
       _disabledChoiceIdx = wrongs.take(2).toSet();
     });
   }
@@ -106,7 +119,7 @@ class _GameScreenState extends State<GameScreen> {
         _wrong++;
       }
     });
-    // ⛔ Inget auto-advance – användaren måste trycka för att gå vidare.
+    // Ingen auto-advance. Kräver tryck på spelytan.
   }
 
   void _advanceOrFinish() {
@@ -128,7 +141,7 @@ class _GameScreenState extends State<GameScreen> {
       _answered = false;
       _selectedIdx = null;
       _disabledChoiceIdx.clear();
-      _used5050ThisQuestion = false; // ✅ återställ spärren till nästa fråga
+      _used5050ThisQuestion = false;
       _index += 1;
     });
   }
@@ -141,7 +154,7 @@ class _GameScreenState extends State<GameScreen> {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          // ✅ Språk + Ljud alltid överst (ingen visuell ändring)
+          // Språk + Ljud överst (oförändrat)
           const Positioned(
             top: 8,
             left: 0,
@@ -154,7 +167,6 @@ class _GameScreenState extends State<GameScreen> {
             child: Padding(
               padding: const EdgeInsets.only(top: 56.0),
               child: _loaded
-                  // Osynlig tapp-yta som bara är aktiv när ett svar är valt
                   ? GestureDetector(
                       behavior: HitTestBehavior.opaque,
                       onTap: _answered ? _advanceOrFinish : null,
@@ -172,7 +184,8 @@ class _GameScreenState extends State<GameScreen> {
 
   Widget _buildGameBody(String progress) {
     final mistakesLeft = max(0, 3 - _wrong);
-    final canUse5050 = _lifelines > 0 && !_used5050ThisQuestion && !_answered && _loaded; // ✅ knapp-logik
+    final canUse5050 =
+        _lifelines > 0 && !_used5050ThisQuestion && !_answered && _loaded;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -194,7 +207,7 @@ class _GameScreenState extends State<GameScreen> {
               const Spacer(),
               _FiftyButton(
                 remaining: _lifelines,
-                onPressed: canUse5050 ? _use5050 : null, // ✅ inaktivera när den inte får användas
+                onPressed: canUse5050 ? _use5050 : null,
               ),
             ],
           ),
@@ -248,7 +261,7 @@ class _GameScreenState extends State<GameScreen> {
           ),
         ),
 
-        // “Tavla” efter svar: rätt svar + århundrade
+        // Tavla efter svar: rätt svar + århundrade
         if (_answered)
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
@@ -329,11 +342,11 @@ class _GameScreenState extends State<GameScreen> {
             ),
           ),
 
-        // “Fel kvar” längst ned
+        // Fel kvar längst ned
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
           child: Text(
-            i18n.t('Fel kvar: $mistakesLeft', 'Mistakes left: $mistakesLeft'),
+            i18n.t('Fel kvar: ${max(0, 3 - _wrong)}', 'Mistakes left: ${max(0, 3 - _wrong)}'),
             textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
           ),
