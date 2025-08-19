@@ -2,12 +2,10 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 
-/// Enkel bakgrundsmusik med mjuk fade-in/fade-out och preloading.
-/// - Singleton via [BackgroundMusic.instance] (och factory-konstruktorn).
-/// - Startar automatiskt om [enabled] är true.
-/// - Pausar (stoppar inte) vid avstängning för att undvika knaster.
-/// - Debounce skyddar mot snabba upprepade klick.
-/// OBS: Ingen UI-ändring – endast intern logik.
+/// Bakgrundsmusik (singleton) med mjuk fade och preloading.
+/// - Åtkomst: BackgroundMusic.instance
+/// - ensureStarted(): säkerställer att musik startar om den ska vara på
+/// - enabledNotifier: ValueListenable<bool> för UI (Sound On/Off-knapp)
 class BackgroundMusic extends ChangeNotifier {
   // ---- Singleton ----
   BackgroundMusic._internal() {
@@ -19,8 +17,12 @@ class BackgroundMusic extends ChangeNotifier {
 
   final AudioPlayer _player = AudioPlayer();
   bool _inited = false;
-  bool _busy = false; // skyddar mot dubbelklick/glitch
-  bool _enabled = true; // starta musik ON som default
+  bool _busy = false; // skydd mot snabba upprepade klick
+  bool _enabled = true; // starta med ljud PÅ
+
+  // UI-lyssnare (för t.ex. ValueListenableBuilder)
+  final ValueNotifier<bool> _enabledVN = ValueNotifier<bool>(true);
+  ValueListenable<bool> get enabledNotifier => _enabledVN;
 
   bool get enabled => _enabled;
 
@@ -30,79 +32,90 @@ class BackgroundMusic extends ChangeNotifier {
   Future<void> _init() async {
     if (_inited) return;
     try {
-      // Ladda källan i förväg (minskar start-hack/knaster)
       await _player.setAsset('assets/audio/FloridaBirds.mp3');
       await _player.setLoopMode(LoopMode.one);
       await _player.setVolume(0.0);
-
       _inited = true;
 
+      // Starta direkt om ljud ska vara på
       if (_enabled) {
-        // Vänta en tick så decodern är redo, sen mjuk fade-in
         await _player.play();
         await _fadeTo(_targetVolume, _fadeDur);
       }
     } catch (e) {
-      // Tyst fel – vi vill inte krascha spelet om ljudet saknas.
       debugPrint('BackgroundMusic init error: $e');
     }
   }
 
-  /// Växla på/av. Mjuk fade vid båda lägena.
-  Future<void> toggle() async {
+  /// Säkerställ att musiken spelar om ljud är påslaget.
+  Future<void> ensureStarted() async {
     if (_busy) return;
+    await _init();
+    if (!_enabled) return;
+    if (!_player.playing) {
+      await _player.play();
+    }
+    if (_player.volume < _targetVolume - 0.01) {
+      await _fadeTo(_targetVolume, _fadeDur);
+    }
+  }
+
+  /// Växla på/av med mjuk fade.
+  Future<void> toggle() async {
+    await setEnabled(!_enabled);
+  }
+
+  /// Slå på/av explicit (används av toggle & UI).
+  Future<void> setEnabled(bool value) async {
+    if (_busy || value == _enabled) return;
     _busy = true;
     try {
-      if (_enabled) {
-        await _fadeTo(0.0, _fadeDur);
-        await _player.pause(); // behåll buffern -> mindre knaster vid nästa start
-        _enabled = false;
-        notifyListeners();
-      } else {
+      if (value) {
         await _init();
-        if (_player.playing == false) {
+        if (!_player.playing) {
           await _player.play();
         }
         await _fadeTo(_targetVolume, _fadeDur);
         _enabled = true;
-        notifyListeners();
+      } else {
+        await _fadeTo(0.0, _fadeDur);
+        await _player.pause(); // pausa (behåll buffert) för mindre knaster
+        _enabled = false;
       }
+      _enabledVN.value = _enabled;
+      notifyListeners();
+    } catch (e) {
+      debugPrint('BackgroundMusic setEnabled error: $e');
     } finally {
       _busy = false;
     }
-  }
-
-  /// För säkerhets skull om du vill explicit slå på/av utan att veta läget.
-  Future<void> setEnabled(bool value) async {
-    if (value == _enabled) return;
-    await toggle();
   }
 
   /// Mjuk volymramp utan externa paket.
   Future<void> _fadeTo(double target, Duration dur) async {
     try {
       final current = _player.volume;
-      const int steps = 15; // lint: const istället för final
+      const int steps = 15;
       final stepDur = dur.inMilliseconds ~/ steps;
       final delta = (target - current) / steps;
 
       for (int i = 1; i <= steps; i++) {
-        await _player.setVolume((current + delta * i).clamp(0.0, 1.0));
+        final v = (current + delta * i).clamp(0.0, 1.0);
+        await _player.setVolume(v);
         await Future.delayed(Duration(milliseconds: stepDur));
       }
-    } catch (e) {
-      // Om något går fel, försök bara sätta slutvolymen direkt.
+    } catch (_) {
       await _player.setVolume(target);
     }
   }
 
   @override
   void dispose() {
+    _enabledVN.dispose();
     _player.dispose();
     super.dispose();
   }
 }
 
-/// Legacy/global åtkomst om något fortfarande importerar den.
-/// Pekar på samma singleton.
+/// Legacy/global – pekar på samma singleton om något gammalt anropar den.
 final backgroundMusic = BackgroundMusic.instance;
