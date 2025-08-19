@@ -109,3 +109,8 @@ jobs:
           echo "Testing script help..."
           python scripts/fill_commons_metadata.py --help || echo "No help available for fill_commons_metadata.py"
           echo "✅ Python script help check completed"
+
+      - name: Run validation script
+        run: |
+          echo "Running comprehensive validation..."
+          python scripts/validate.py
