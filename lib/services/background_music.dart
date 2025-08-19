@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart'; // <-- behövs för ValueListenable/ValueNotifier
 import 'package:flutter/widgets.dart';
 import 'package:just_audio/just_audio.dart';
 
